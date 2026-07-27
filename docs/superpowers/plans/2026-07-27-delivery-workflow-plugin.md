@@ -1046,11 +1046,15 @@ function check() {
 }
 
 const commands = { init, status, check };
+// exitCode rather than process.exit(): an abrupt exit can drop unflushed stdout,
+// and this command's output is its evidence. It also segfaults intermittently on
+// some Node builds.
 if (!commands[command]) {
   console.log('usage: delivery <init|status|check> [args]');
-  process.exit(1);
+  process.exitCode = 1;
+} else {
+  process.exitCode = commands[command]();
 }
-process.exit(commands[command]());
 ```
 
 - [ ] **Step 4: Make it executable and register it**
