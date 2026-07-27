@@ -21,6 +21,7 @@ test('an empty config resolves to the strict defaults', () => {
     stages: { intake: true, tests: 'ask' },
     gates: {},
     git: { base: 'main', worktree: true, squash: true },
+    style: { comments: 'why-only', commits: 'per-stage', checkpoints: 'plan' },
   });
 });
 
@@ -29,6 +30,32 @@ test('a partial section override keeps its unmentioned siblings', () => {
   assert.equal(config.git.base, 'develop');
   assert.equal(config.git.worktree, true);
   assert.equal(config.git.squash, true);
+});
+
+test('a partial style override keeps its unmentioned siblings', () => {
+  const config = applyDefaults({ style: { comments: 'none' } });
+  assert.equal(config.style.comments, 'none');
+  assert.equal(config.style.commits, 'per-stage');
+  assert.equal(config.style.checkpoints, 'plan');
+});
+
+test('every style key rejects a value outside its enum', () => {
+  for (const [key, values] of [
+    ['comments', ['none', 'why-only', 'generous']],
+    ['commits', ['atomic', 'per-stage', 'single']],
+    ['checkpoints', ['intake', 'plan', 'every']],
+  ]) {
+    for (const value of values) {
+      assert.deepEqual(validate(applyDefaults({ style: { [key]: value } })), []);
+    }
+    const errors = validate(applyDefaults({ style: { [key]: 'wat' } }));
+    assert.equal(errors.length, 1);
+    assert.match(errors[0], new RegExp(`style\\.${key}`));
+  }
+});
+
+test('a typo inside style is reported rather than ignored', () => {
+  assert.deepEqual(unknownKeys({ style: { comment: 'none' } }), ['style.comment']);
 });
 
 test('gates are never defaulted - an absent gate does not exist', () => {
