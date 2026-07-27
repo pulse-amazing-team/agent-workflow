@@ -162,3 +162,37 @@ test('a ticket path that is a file instead of a directory does not crash the hoo
   writeFileSync(join(root, 'docs/features/m5'), 'not a directory\n');
   assert.doesNotThrow(() => runHook(prCall, root));
 });
+
+// Fix round 2: docsDir reaches additionalContext through ticketDir() in the
+// missing-artifacts note, a second interpolation site the first fix round
+// missed. A crafted docsDir must come back capped, not verbatim - this is the
+// common path (a ticket resolves, artifacts are missing), more common than
+// the ambiguous-ticket fallback that was already capped.
+test('a long crafted docsDir is capped rather than reflected verbatim', () => {
+  const payload = 'X'.repeat(200);
+  const docsDir = `docs/${payload}`;
+  const root = repo({
+    config: { docsDir },
+    artifacts: [`${docsDir}/m5/intake.md`],
+  });
+  const output = runHook(prCall, root);
+  const context = output.hookSpecificOutput.additionalContext;
+  assert.equal(context.includes(payload), false);
+  assert.ok(context.length < 700, `expected a bounded message, got ${context.length} chars`);
+});
+
+// Fix round 2: gate NAMES (unlike commands) are never length- or
+// content-validated by lib/config.js, and unlike a path they have no
+// filesystem-imposed size ceiling. A crafted gate name reaches
+// additionalContext through the ambiguous-ticket fallback's gate list.
+test('a long crafted gate name is capped rather than reflected verbatim', () => {
+  const payload = 'G'.repeat(200);
+  const root = repo({
+    config: { gates: { [payload]: 'echo ok' } },
+    artifacts: ['docs/features/m5/scope.md', 'docs/features/m6/scope.md'],
+  });
+  const output = runHook(prCall, root);
+  const context = output.hookSpecificOutput.additionalContext;
+  assert.equal(context.includes(payload), false);
+  assert.ok(context.length < 700, `expected a bounded message, got ${context.length} chars`);
+});

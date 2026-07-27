@@ -151,3 +151,16 @@ test('check with no gates configured says so instead of claiming success', () =>
   const { stdout } = run(['check', 'm5'], root);
   assert.match(stdout, /no gates configured/);
 });
+
+// Fix round: existsSync(dir) is true for a plain file too, so a ticket path
+// that has been replaced by a file (rename or refactor gone wrong, no malice
+// needed) used to throw ENOTDIR out of readdirSync uncaught, crashing the
+// command instead of reporting a result.
+test('status reports missing artifacts instead of crashing when the ticket path is a file', () => {
+  const root = scratchRepo({ config: {} });
+  mkdirSync(join(root, 'docs/features'), { recursive: true });
+  writeFileSync(join(root, 'docs/features/m5'), 'not a directory\n');
+  const { code, stdout } = run(['status', 'm5'], root);
+  assert.equal(code, 1);
+  assert.match(stdout, /missing: intake\.md, scope\.md, product\.md, plan\.md/);
+});

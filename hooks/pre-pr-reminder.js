@@ -20,6 +20,15 @@ import {
 
 const PR_COMMAND = /\bgh\s+pr\s+create\b/;
 
+// Everything from .claude/delivery.json is untrusted: that file arrives with
+// whatever branch is checked out, and this hook runs unprompted. Anything from
+// it that reaches the model's context goes through here first - whitespace
+// collapsed so it cannot fake structure, length capped so it cannot flood, and
+// quoted so it reads as data rather than as instructions.
+function untrusted(value, max = 120) {
+  return `"${String(value).replace(/\s+/g, ' ').slice(0, max)}"`;
+}
+
 function readStdin() {
   try {
     return JSON.parse(readFileSync(0, 'utf8'));
@@ -61,19 +70,16 @@ function main() {
   // No config means this repo has not opted in. Say nothing.
   if (!exists) return;
   if (errors.length > 0) {
-    // Config text is untrusted: it arrives with whatever branch is checked out.
-    // Cap it and quote it so it reads as data, not as instructions.
-    const detail = errors.join('; ').replace(/\s+/g, ' ').slice(0, 300);
-    emit(`.claude/delivery.json is invalid. The loader reported: "${detail}". Fix it before opening the PR.`);
+    emit(`.claude/delivery.json is invalid. The loader reported: ${untrusted(errors.join('; '), 300)}. Fix it before opening the PR.`);
     return;
   }
 
   const ticket = inferTicket(changedPaths(cwd, config.git.base), config.docsDir);
   if (ticket === null) {
-    const docsDir = String(config.docsDir).slice(0, 100);
+    const gateNames = Object.keys(config.gates).join(', ');
     emit(
-      `Delivery workflow: could not tell which ticket this branch belongs to - no single directory under ${docsDir} was touched. ` +
-        `Before opening the PR, confirm the ticket's artifacts exist and that the configured gates (${Object.keys(config.gates).join(', ') || 'none configured'}) actually ran.`,
+      `Delivery workflow: could not tell which ticket this branch belongs to - no single directory under ${untrusted(config.docsDir)} was touched. ` +
+        `Before opening the PR, confirm the ticket's artifacts exist and that the configured gates (${gateNames ? untrusted(gateNames) : 'none configured'}) actually ran.`,
     );
     return;
   }
@@ -92,7 +98,7 @@ function main() {
 
   const notes = [];
   if (missing.length > 0) {
-    notes.push(`missing artifacts in ${ticketDir(config, ticket)}: ${missing.join(', ')}`);
+    notes.push(`missing artifacts in ${untrusted(ticketDir(config, ticket))}: ${missing.join(', ')}`);
   }
   if (pending.length > 0) {
     notes.push(`the tests decision has not been recorded for ${ticket} - ask, then write it into plan.md`);
