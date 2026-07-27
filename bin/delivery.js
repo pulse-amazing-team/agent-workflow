@@ -98,7 +98,7 @@ function artifactReport(config, ticket) {
   if (missing.length > 0) console.log(`  missing: ${missing.join(', ')}`);
   else console.log('  all required artifacts present');
   if (pending.length > 0) {
-    console.log(`  decision pending: ${pending.join(', ')} - ask whether tests are in scope`);
+    console.log(`  decision pending: ${pending.join(', ')} - ask unless plan.md already records the answer`);
   }
   return missing.length === 0;
 }

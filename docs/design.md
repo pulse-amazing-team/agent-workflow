@@ -99,7 +99,7 @@ Forgetting to configure something yields a stricter process, never a looser one.
 **`language` selects the hard-rule set.**
 `ts` forbids `any`, non-null `!` and `as T` casts (`as const` stays legal).
 `py`, `go` and `none` carry their own or none.
-Language-independent rules - Conventional Commits, no em dash, never hand-edit generated files - always apply.
+Language-independent rules - Conventional Commits and never hand-edit generated files - always apply.
 
 **A key it does not recognize is an error.**
 `applyDefaults` builds the resolved config key by key, so an unrecognized key would otherwise vanish without trace and read identically to "absent" - which would let a typo quietly relax the process.

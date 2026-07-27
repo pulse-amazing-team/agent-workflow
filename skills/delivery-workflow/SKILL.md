@@ -70,6 +70,11 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/delivery.js" check <ticket>
 
 It verifies the artifacts and actually runs the configured gates. Paste its output. If a gate fails, quote the failure - never claim green blind.
 
+One line needs interpreting rather than obeying. `decision pending: test-cases.md`
+only means the file is absent; the check cannot read a decision. If `plan.md`
+already records the tests decision, that record governs and the nudge is expected
+noise - do not re-ask the human. Ask only when `plan.md` has no answer in it.
+
 Then confirm by hand:
 
 - Code matches `plan.md`, with deviations folded back into it.
