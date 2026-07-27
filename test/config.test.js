@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { applyDefaults, loadConfig, validate } from '../lib/config.js';
+import { applyDefaults, loadConfig, validate, unknownKeys } from '../lib/config.js';
 
 function repoWith(contents) {
   const root = mkdtempSync(join(tmpdir(), 'delivery-'));
@@ -85,4 +85,38 @@ test('a real config file is loaded and merged over the defaults', () => {
   assert.equal(result.config.language, 'ts');
   assert.equal(result.config.docsDir, 'docs/features');
   assert.deepEqual(result.config.gates, { test: 'pnpm test' });
+});
+
+test('a misspelled top-level key is an error, not a silent no-op', () => {
+  const result = loadConfig(repoWith(JSON.stringify({ gate: { test: 'npm test' } })));
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /unknown key gate/);
+});
+
+test('a misspelled key inside a section is an error', () => {
+  const result = loadConfig(repoWith(JSON.stringify({ git: { basee: 'develop' } })));
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /unknown key git\.basee/);
+});
+
+test('$schema is a recognised key and is not reported as unknown', () => {
+  const result = loadConfig(repoWith(JSON.stringify({ $schema: 'https://example.com/s.json' })));
+  assert.deepEqual(result.errors, []);
+});
+
+test('gate names are free-form, so they are never reported as unknown', () => {
+  const result = loadConfig(repoWith(JSON.stringify({ gates: { whatever: 'make check' } })));
+  assert.deepEqual(result.errors, []);
+});
+
+test('a config file containing null is an error, not a crash', () => {
+  const result = loadConfig(repoWith('null'));
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /must contain a JSON object/);
+});
+
+test('unknown keys are reported before validation errors', () => {
+  const result = loadConfig(repoWith(JSON.stringify({ gate: {}, language: 'rust' })));
+  assert.match(result.errors[0], /unknown key gate/);
+  assert.match(result.errors[1], /language must be one of/);
 });

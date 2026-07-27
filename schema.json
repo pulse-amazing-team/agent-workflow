@@ -13,7 +13,7 @@
     },
     "docsDir": {
       "type": "string",
-      "minLength": 1,
+      "pattern": "\\S",
       "default": "docs/features",
       "description": "Where per-ticket artifacts live."
     },
@@ -42,21 +42,21 @@
     },
     "gates": {
       "type": "object",
-      "additionalProperties": { "type": "string", "minLength": 1 },
+      "additionalProperties": { "type": "string", "pattern": "\\S" },
       "description": "Shell command per gate. An absent key means the gate does not exist.",
       "properties": {
-        "lint": { "type": "string", "minLength": 1 },
-        "typecheck": { "type": "string", "minLength": 1 },
-        "test": { "type": "string", "minLength": 1 },
-        "e2e": { "type": "string", "minLength": 1 },
-        "build": { "type": "string", "minLength": 1 }
+        "lint": { "type": "string", "pattern": "\\S" },
+        "typecheck": { "type": "string", "pattern": "\\S" },
+        "test": { "type": "string", "pattern": "\\S" },
+        "e2e": { "type": "string", "pattern": "\\S" },
+        "build": { "type": "string", "pattern": "\\S" }
       }
     },
     "git": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "base": { "type": "string", "minLength": 1, "default": "main" },
+        "base": { "type": "string", "pattern": "\\S", "default": "main" },
         "worktree": { "type": "boolean", "default": true },
         "squash": { "type": "boolean", "default": true }
       }
