@@ -212,3 +212,15 @@ Added: `.claude/delivery.json`, configured with that project's own gates and sta
 - **Config drift from reality.** A repo's `gates.test` can name a script that was later renamed. `/delivery-check` surfaces this the first time it runs, because the command fails loudly rather than being skipped.
 - **The plugin absorbing project facts.** The one rule that makes this portable is that layer 1 knows nothing specific. Every future addition to `SKILL.md` should be checked against it.
 - **`"ask"` becoming a rubber stamp.** If the question is asked at a point where the human is not paying attention, the answer will always be "yes, whatever". It is asked right after implementation, when the diff is fresh and the human has context to answer well.
+
+## The style section
+
+`style` holds agent behaviour: `comments`, `commits`, `checkpoints`. It arrived with the interactive `/delivery-init`, because the alternative - a generated block in the repo's own `CLAUDE.md` - is unvalidated, invisible to the CLI and the hook, and makes `init` write into a file it does not own.
+
+Its defaults break the strict-default rule that governs the rest of the config, and that is deliberate. Strictness is meaningless for style: `generous` is not stricter than `none`. So the defaults reproduce what `SKILL.md` already did, which also means upgrading the plugin cannot change a repo's process without a config change. Recorded here so the next reader of `lib/config.js` does not file it as an oversight and "fix" it.
+
+The CLI stays non-interactive. `/delivery-init` is a markdown prompt executed by an agent, and that agent's shell gives the process no interactive stdin, so a readline wizard would hang rather than ask. The agent asks; the CLI takes the answers as `--set` and `--unset` flags and remains the only writer of the file.
+
+Adding the section is a breaking change for old plugin versions, hence 0.2.0. An older `lib/config.js` reports `unknown key style`, that lands in `errors`, and `check` stops running at all - broken, not degraded. Relaxing the unknown-key rule to tolerate future sections was rejected: catching a typo that would silently loosen the process is worth more than forward compatibility with a plugin the user can update.
+
+The full spec is in [specs/2026-07-27-interactive-delivery-init.md](specs/2026-07-27-interactive-delivery-init.md).

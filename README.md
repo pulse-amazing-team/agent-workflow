@@ -35,7 +35,7 @@ Then once per repository:
 /delivery-init
 ```
 
-It reads your repo - package manager, scripts, language, default branch - and proposes a config. It never invents a command it could not find: gates it cannot detect are listed by name so you can add them yourself. Review it, then commit it.
+It reads your repo - package manager, scripts, language, default branch - and proposes a config. It never invents a command it could not find: gates it cannot detect are listed by name so you can add them yourself. Take the proposal as-is, or answer three short batches of questions - gates, then process, then style - and stop after any of them. Review it, then commit it.
 
 ## Configuration
 
@@ -53,7 +53,8 @@ It reads your repo - package manager, scripts, language, default branch - and pr
     "typecheck": "pnpm typecheck",
     "test": "pnpm test"
   },
-  "git": { "base": "main", "worktree": true, "squash": true }
+  "git": { "base": "main", "worktree": true, "squash": true },
+  "style": { "comments": "why-only", "commits": "per-stage", "checkpoints": "plan" }
 }
 ```
 
@@ -61,7 +62,7 @@ Four rules govern how it is read.
 
 **An absent `gates` key means the gate does not exist.** It does not mean "guess the command". Nothing is inferred, so nothing can be reported as run when it was not.
 
-**Defaults are strict.** Anything you leave out is on and mandatory. Relaxing a rule takes an explicit line in a file that lives in git and shows up in review. Forgetting to configure something gives you a stricter process, never a looser one.
+**Defaults are strict.** Anything you leave out is on and mandatory. Relaxing a rule takes an explicit line in a file that lives in git and shows up in review. Forgetting to configure something gives you a stricter process, never a looser one. One section is deliberately outside this rule: `style` describes agent behaviour, where no value is meaningfully stricter than another, so its defaults reproduce what the skill already did rather than picking a strictest option. A config written before `style` existed behaves identically after the upgrade.
 
 **A key it does not recognise is an error.** A typo like `gate` for `gates` would otherwise vanish silently and read exactly like "absent", which is the same failure the first rule exists to prevent.
 
@@ -82,6 +83,9 @@ Every key is documented in [schema.json](schema.json). Point your editor at it t
 | `git.base` | branch | `main` | What PRs target |
 | `git.worktree` | boolean | `true` | Whether each ticket gets its own worktree |
 | `git.squash` | boolean | `true` | Whether PRs squash-merge |
+| `style.comments` | `none` `why-only` `generous` | `why-only` | How much commentary the code carries |
+| `style.commits` | `atomic` `per-stage` `single` | `per-stage` | Commit granularity inside a ticket |
+| `style.checkpoints` | `intake` `plan` `every` | `plan` | What the agent stops for, beyond the mandatory intake stop |
 
 ## The tests decision
 
@@ -90,6 +94,14 @@ Every key is documented in [schema.json](schema.json). Point your editor at it t
 It asks once per ticket and records the answer in `plan.md`, so a ticket spanning several sessions does not re-open the question and collect different answers.
 
 Set it to `true` to always write tests. Set it to `false` and the test stages stop existing for that repo - and the test items drop out of the pre-PR check too, so there is nothing left to misreport.
+
+## Style
+
+`style` covers how the agent works rather than what it builds: how much it comments, how it commits, and where it stops to ask.
+
+`checkpoints` deserves one clarification. The stop after intake is mandatory at every level and this key cannot switch it off. `intake` means nothing beyond it, `plan` adds waiting for approval of the plan, and `every` adds a stop after each stage.
+
+The section requires plugin version 0.2.0 or later. An older plugin treats `style` as an unrecognised key, which is an error by design, and `/delivery-check` will refuse to run until you update.
 
 ## Commands
 
