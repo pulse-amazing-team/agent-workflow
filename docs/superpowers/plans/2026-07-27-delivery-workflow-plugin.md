@@ -48,7 +48,7 @@
   "license": "MIT",
   "engines": { "node": ">=22" },
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test"
   }
 }
 ```
@@ -1216,7 +1216,7 @@ Set it to `true` to always write tests, `false` to drop the test stages entirely
 npm test
 ```
 
-No dependencies. Tests are `node --test`.
+No dependencies. Tests are `node --test`, which auto-discovers `test/*.test.js`.
 ````
 
 - [ ] **Step 4: Verify the manifests parse**
