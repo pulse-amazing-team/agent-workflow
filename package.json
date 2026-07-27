@@ -1,5 +1,5 @@
 {
-  "name": "@pulse-amazing-team/agent-workflow",
+  "name": "agent-workflow",
   "version": "0.1.0",
   "private": true,
   "type": "module",

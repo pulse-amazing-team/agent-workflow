@@ -5,14 +5,14 @@ Status: approved, ready for planning
 
 ## Problem
 
-The delivery discipline that makes work in `pulse` reviewable - seven staged artifacts, a planning checkpoint, verification gates, a pre-PR self-check - exists only inside that repo.
-It is spread across `AGENTS.md`, `docs/delivery-workflow.md`, `docs/features/README.md` and `.agents/skills/delivery-workflow/SKILL.md`, and every one of those files mixes universal process with facts that are true only of `pulse`.
+Delivery discipline - staged artifacts, a planning checkpoint, verification gates, a pre-PR self-check - is easy enough to build once, inside a single repository.
+It tends to end up spread across that repo's own instructions file and a handful of ad hoc docs, with universal process tangled together with facts that are true only of that one project.
 
 Three consequences:
 
 1. A second repo gets none of it without copy-paste, and the copies drift.
-2. Nothing can be turned off per repo, so a repo that does not need e2e tests, or does not use Trello, either follows rules that do not apply or abandons the process entirely.
-3. It cannot be handed to another person. There is no install step, only "read these four files and imitate them".
+2. Nothing can be turned off per repo, so a repo that does not need e2e tests, or does not use a particular tracker, either follows rules that do not apply or abandons the process entirely.
+3. It cannot be handed to another person. There is no install step, only "read these files and imitate them".
 
 ## Decisions
 
@@ -21,10 +21,10 @@ Three consequences:
 | Packaging | Claude Code plugin, distributed as a marketplace git repo | Same mechanism already used for caveman / superpowers / claude-hud. Install, update and uninstall are one command each and leave nothing behind. |
 | Repo | `pulse-amazing-team/agent-workflow` | Owner already has the org. |
 | Artifact location | Always `docs/features/<TICKET>/`, committed | Considered scratchpad / PR body / tracker comments. Rejected: the artifacts are the thing that lets a second person pick a ticket up from its docs alone, which is the point of the process. |
-| Tracker | `link` mode only in v1 | Agent reads a pasted ticket URL for the key and context, and writes nothing back. Trello automation stays in `pulse`'s own `AGENTS.md`. |
+| Tracker | `link` mode only in v1 | Agent reads a pasted ticket URL for the key and context, and writes nothing back. Tracker automation stays repo-local, in that project's own instructions. |
 | Tests | Conditional, gated on an explicit question | New requirement. Not every repo warrants tests, and an agent that writes them unasked produces noise. |
 | Enforcement | Soft reminder hook, non-blocking | A blocking gate on `gh pr create` was considered and rejected: it breaks hotfixes and would be the first thing a new user disables. |
-| Other agents | Claude Code only | `.agents/skills/delivery-workflow/` is deleted from `pulse`. Codex keeps whatever remains in `AGENTS.md`. |
+| Other agents | Claude Code only | The plugin format and hook mechanism this design relies on are specific to Claude Code. Other agents keep following whatever process discipline already lives in the repo's own instructions file. |
 
 ## Architecture: three layers
 
@@ -41,8 +41,7 @@ The facts the plugin must know exactly rather than guess: gate commands, which s
 Committed, so it is identical for every person and every agent working in that repo, and visible on review when it changes.
 
 **Layer 3 - the repo's `AGENTS.md` (prose).**
-Stack, layout, domain conventions, gotchas.
-For `pulse`, also the Trello board rules.
+Stack, layout, domain conventions, gotchas, and any tracker automation the project relies on.
 The plugin reads this as context but does not own it.
 
 ## Distribution
@@ -135,7 +134,7 @@ Language-independent rules - Conventional Commits, no em dash, never hand-edit g
 
 The gate after stage 4 is driven by `stages.tests`:
 
-- `"ask"` (default, including in `pulse`) - the agent stops and asks whether to write tests.
+- `"ask"` (default) - the agent stops and asks whether to write tests.
   On yes, it runs a short question session: what is worth covering, where the unit/e2e boundary sits, which cases are genuinely risky.
   The answers become `test-cases.md`, and stages 5-7 proceed.
 - `true` - stages 5-7 always run, no question.
@@ -177,28 +176,23 @@ A blocking gate was considered and rejected - it breaks legitimate hotfixes, and
 
 `/delivery-check` runs the same evaluation on demand and prints real command output rather than a claim.
 
-## pulse migration
+## Adopting an existing repository
 
-Moves out of `pulse` and into the plugin:
+A repository that already has its own delivery discipline written into its instructions file is not starting from zero - it moves that discipline into the plugin and keeps whatever is genuinely specific to the project.
 
-- the `## Delivery workflow` section of `AGENTS.md` (the stage list)
-- `### Before you call it done (self-check)`
-- `### Card intake rules` (the type/priority label discipline is universal; the Trello mechanics are not)
-- `docs/delivery-workflow.md`
-- `docs/features/README.md` (the artifact templates)
+Moves out of the repo's own instructions and into the plugin:
 
-Stays in `pulse`:
+- the stage list
+- the pre-PR self-check
+- the ticket intake rules (the discipline itself is universal; any tracker-specific mechanics are not)
 
-- stack, layout, setup, demo logins
-- API contract conventions, web conventions, gotchas, "where things live"
-- all Trello specifics: board, columns, labels, priority lanes, the MR column
+Stays in the repo's own instructions:
 
-Added: `.claude/delivery.json` with `stages.tests: "ask"`.
-Deleted: `.agents/skills/delivery-workflow/`.
+- stack, layout, setup, local conventions
+- domain conventions, gotchas, "where things live"
+- any tracker automation: boards, columns, labels, and the like
 
-Fixed in passing: `pulse`'s `.claude/skills/` currently contains only a `.DS_Store`.
-The symlinks to `.agents/skills/` that `CLAUDE.md` documents are gone, so the repo-local skill has silently not been loading.
-After migration no symlink is needed - the skill arrives from the plugin - and `CLAUDE.md` loses the paragraph describing that arrangement.
+Added: `.claude/delivery.json`, configured with that project's own gates and stage settings.
 
 ## Out of scope for v1
 
