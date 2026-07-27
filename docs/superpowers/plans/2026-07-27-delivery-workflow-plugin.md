@@ -731,7 +731,7 @@ git commit -m "feat(status): derive required artifacts and infer the ticket"
 - Modify: `package.json` (add the `bin` field)
 
 **Interfaces:**
-- Consumes: `loadConfig`, `CONFIG_PATH` (Task 1); `proposeConfig`, `undetectedGates` (Task 2); `missingArtifacts`, `conditionalArtifacts`, `requiredArtifacts`, `inferTicket`, `ticketDir` (Task 3).
+- Consumes: `loadConfig`, `CONFIG_PATH` (Task 1); `proposeConfig`, `undetectedGates` (Task 2); `missingArtifacts`, `conditionalArtifacts`, `requiredArtifacts`, `ticketDir` (Task 3). Not `inferTicket` - the CLI takes the ticket as an argument; inference belongs to the Task 8 hook, which has no one to ask.
 - Produces: an executable with three subcommands - `node bin/delivery.js init [--write]`, `node bin/delivery.js status [ticket]`, `node bin/delivery.js check [ticket]`. Exit code 0 when everything the config demands is satisfied, 1 otherwise.
 
 - [ ] **Step 1: Write the failing test**
