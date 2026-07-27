@@ -63,6 +63,7 @@ test('proposeConfig assembles a complete, strict config', () => {
     stages: { intake: true, tests: 'ask' },
     gates: { lint: 'pnpm run lint', typecheck: 'pnpm run typecheck', test: 'pnpm run test' },
     git: { base: 'develop', worktree: true, squash: true },
+    style: { comments: 'why-only', commits: 'per-stage', checkpoints: 'plan' },
   });
 });
 
@@ -71,4 +72,13 @@ test('a repo with nothing detectable still proposes a valid config with no gates
   assert.equal(config.language, 'none');
   assert.deepEqual(config.gates, {});
   assert.equal(config.git.base, 'main');
+});
+
+test('the proposal carries the style defaults so they are visible before writing', () => {
+  const config = proposeConfig({ files: [], scripts: {} });
+  assert.deepEqual(config.style, {
+    comments: 'why-only',
+    commits: 'per-stage',
+    checkpoints: 'plan',
+  });
 });

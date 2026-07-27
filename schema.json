@@ -60,6 +60,28 @@
         "worktree": { "type": "boolean", "default": true },
         "squash": { "type": "boolean", "default": true }
       }
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How the agent behaves while implementing. Unlike the rest of this file, these defaults reproduce current behaviour rather than being the strictest option.",
+      "properties": {
+        "comments": {
+          "enum": ["none", "why-only", "generous"],
+          "default": "why-only",
+          "description": "none: only where the code is unreadable without a comment. why-only: explain why, never what. generous: why-only plus doc blocks on public APIs."
+        },
+        "commits": {
+          "enum": ["atomic", "per-stage", "single"],
+          "default": "per-stage",
+          "description": "Commit granularity inside a ticket. Independent of git.squash, which governs the merge."
+        },
+        "checkpoints": {
+          "enum": ["intake", "plan", "every"],
+          "default": "plan",
+          "description": "What the agent stops for beyond the intake stop, which is mandatory at every level. intake: nothing further. plan: also wait for plan approval. every: also stop after each stage."
+        }
+      }
     }
   }
 }
