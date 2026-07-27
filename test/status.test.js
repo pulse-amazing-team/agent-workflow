@@ -54,6 +54,20 @@ test('nothing is missing once every required artifact exists', () => {
   assert.deepEqual(missingArtifacts(config, present), []);
 });
 
+test('a caller must scope presentFiles to one ticket - the contract, pinned', () => {
+  const config = applyDefaults({ stages: { intake: false } });
+  // Only m5's own directory. m6's identically-named artifacts are not visible
+  // here, which is exactly the caller obligation the doc comment states.
+  const m5Only = ['docs/features/m5/scope.md'];
+  assert.deepEqual(missingArtifacts(config, m5Only), ['product.md', 'plan.md']);
+
+  // The same list with a second ticket's files mixed in would wrongly clear
+  // m5's requirements. This asserts the failure mode explicitly so nobody
+  // "fixes" the caller contract away without seeing what it costs.
+  const mixed = ['docs/features/m5/scope.md', 'docs/features/m6/product.md', 'docs/features/m6/plan.md'];
+  assert.deepEqual(missingArtifacts(config, mixed), []);
+});
+
 test('exactly one touched ticket directory identifies the ticket', () => {
   const paths = ['docs/features/m5/plan.md', 'src/thing.ts', 'docs/features/m5/scope.md'];
   assert.equal(inferTicket(paths, 'docs/features'), 'm5');
