@@ -13,6 +13,7 @@
 - Layer 1 rule: **the plugin knows no fact about any specific project.** Every addition to `SKILL.md`, commands or `lib/` must be checkable against this. Stack, paths, commands and board names belong in layers 2 and 3.
 - **An absent `gates` key means the gate does not exist.** Never default, infer or invent a gate command.
 - **Defaults are strict.** Every unspecified key resolves to the stricter behaviour. Relaxing requires an explicit line in the committed config.
+- **A key the loader does not recognize is an error.** `applyDefaults` builds the resolved config key by key, so an unknown key would otherwise vanish without trace and read identically to "absent". `loadConfig` reports it instead.
 - Zero runtime dependencies. `package.json` has no `dependencies`; tests use `node --test` only.
 - No em dash anywhere. Use a plain dash.
 - Conventional Commits for every commit subject: `type(scope): summary`.
@@ -33,7 +34,8 @@
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `CONFIG_PATH: string`, `DEFAULTS: object`, `LANGUAGES: string[]`, `TRACKER_MODES: string[]`, `TESTS_MODES: (boolean|string)[]`, `applyDefaults(raw?: object): Config`, `validate(config: Config): string[]`, `loadConfig(repoRoot: string): { exists: boolean, path: string, config: Config, errors: string[] }`.
+- Produces: `CONFIG_PATH: string`, `DEFAULTS: object`, `KNOWN_KEYS: object`, `LANGUAGES: string[]`, `TRACKER_MODES: string[]`, `TESTS_MODES: (boolean|string)[]`, `applyDefaults(raw?: object): Config`, `validate(config: Config): string[]`, `unknownKeys(raw?: object): string[]`, `loadConfig(repoRoot: string): { exists: boolean, path: string, config: Config, errors: string[] }`.
+  `loadConfig` reports an unrecognized key as an error rather than dropping it: a typo like `gate` for `gates` would otherwise read exactly like "key absent" and silently relax the process. The keys under `gates` are gate names the repo chooses, so they are never checked against a list.
   `Config` is `{ language, docsDir, tracker: { mode }, stages: { intake, tests }, gates: Record<string,string>, git: { base, worktree, squash } }`.
 
 - [ ] **Step 1: Create `package.json`**
