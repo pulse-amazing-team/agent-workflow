@@ -20,6 +20,7 @@ Everything below is shaped by that file. Three rules:
 - **An absent `gates` key means the gate does not exist.** Never invent a command to fill the hole, and never report a gate you did not run.
 - **Anything unspecified is on and mandatory.** Strictness is the default.
 - **`language` selects the hard rules.** `ts` forbids `any`, non-null `!` and `as T` (`as const` is fine). Conventional Commits and "never hand-edit generated files" apply regardless.
+- **`style` is optional, and its defaults are "as today", not "stricter".** Absent means `comments: why-only`, `commits: per-stage`, `checkpoints: plan` - exactly what this skill did before the section existed, so upgrading the plugin never changes a repo's process behind its back.
 
 The repo's own `AGENTS.md` or `CLAUDE.md` carries stack, layout and domain conventions. Read it. This skill owns the process, not the project.
 
@@ -34,6 +35,32 @@ The key names the artifact directory exactly as given: `<docsDir>/<ticket>/`. `t
 **Do NOT jump to code.** Work the stages below in order, top to bottom, and create a todo per stage before you start so that skipping one is visible rather than silent.
 
 The first stage is the one most often skipped, and skipping it is what produces work nobody asked for. Do not treat it as paperwork to be filled in after the fact.
+
+## Style
+
+`style` says how to work, not what to build. Read all three keys before stage 4.
+
+**`comments`** - how much commentary the code carries.
+
+- `none` - comment only where the code is genuinely unreadable without it.
+- `why-only` - explain why a thing is done, never what the line does. The default.
+- `generous` - `why-only` plus a doc block on every exported function, type and module.
+
+**`commits`** - granularity inside the ticket.
+
+- `atomic` - one commit per logical change, tests and implementation together.
+- `per-stage` - one commit per stage that produced files. The default.
+- `single` - one commit for the whole ticket.
+
+Conventional Commits applies at every setting. `git.squash` governs the merge and is a separate decision.
+
+**`checkpoints`** - what you stop for.
+
+The stop after intake is mandatory at every level and is never governed by this key. So is the rule to wait before writing code when anything is product-ambiguous. `checkpoints` only adds to those:
+
+- `intake` - nothing beyond them.
+- `plan` - also post the planning checkpoint and wait for approval before stage 4. The default.
+- `every` - also stop after each stage and wait before starting the next.
 
 ## Stages
 
@@ -50,7 +77,7 @@ If the ask is genuinely unambiguous, say so in one line and move on - do not inv
 
 **3. Plan** (`plan.md`) - approach, data model, endpoints, files, migration steps, risks. Reconcile the ticket against the current code here and flag anything stale in it.
 
-Then post a **planning checkpoint** to the human: what you are building, what you are NOT building, the decisions you made, the open questions, and where the risk is. WAIT for approval before writing code if anything is product-ambiguous.
+Then post a **planning checkpoint** to the human: what you are building, what you are NOT building, the decisions you made, the open questions, and where the risk is. Unless `style.checkpoints` is `intake`, WAIT for approval before writing code. At `intake` you still post it and may continue without waiting - except when anything is product-ambiguous, where waiting is required at every level.
 
 **4. Implementation** - the code. It must match `plan.md`; fold any deviation back into the plan so the document never lies.
 
