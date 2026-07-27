@@ -1636,7 +1636,7 @@ Show the proposal. Then say, in your own words:
 - which gates were NOT detected - these are real gaps, not defaults. If the repo has them under other script names, the user should say so now.
 - that `stages.tests` is `"ask"`, meaning the agent will stop after implementation and ask whether tests are in scope
 
-Ask whether to write it as-is or adjust anything first.
+Ask whether to write it as-is or adjust anything first, then STOP and WAIT for the answer. Do not run Step 4 until the user has replied. Writing a config they have not seen is how a repo ends up with gates nobody chose.
 
 ## Step 4: Write it
 
@@ -1656,7 +1656,7 @@ Tell the user the config is committed-ready and that from here on, starting a ti
 ````markdown
 ---
 description: Verify a ticket's artifacts and actually run the configured gates
-allowed-tools: Bash, Read
+allowed-tools: Bash, Read, Edit
 ---
 
 Run the real pre-PR check for a ticket.
@@ -1678,7 +1678,7 @@ This command's output is evidence. Paste what it actually printed.
 - If it printed `no gates configured`, say exactly that. Nothing was verified, and nothing may be claimed.
 - If `decision pending: test-cases.md` appears, read `plan.md` before doing anything. The check only knows the file is absent; it cannot read a decision. If `plan.md` already records the tests answer, that record governs and this line is expected noise - do not re-ask. Ask only when `plan.md` has no answer in it, and write the answer there when you get it.
 
-Never report the check as passing on the strength of anything other than a zero exit code.
+Never report the check as passing on anything weaker than a zero exit code - and not on a zero exit code alone when no gates were configured, because then nothing ran.
 ````
 
 - [ ] **Step 3: Verify both command files have frontmatter**
