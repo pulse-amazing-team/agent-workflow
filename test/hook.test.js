@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -134,4 +134,31 @@ test('malformed stdin does not crash the hook', () => {
     encoding: 'utf8',
   });
   assert.equal(stdout.trim(), '');
+});
+
+// Fix round: changedPaths used to build a shell command by string
+// interpolation, and config.git.base is attacker-controlled - it arrives with
+// whatever .claude/delivery.json a branch or PR brings. A base like
+// `main; touch <marker> #` must never actually run `touch`.
+test('a hostile git.base cannot execute a shell command', () => {
+  const root = repo();
+  const marker = join(root, 'PWNED');
+  writeFileSync(
+    join(root, '.claude/delivery.json'),
+    JSON.stringify({ git: { base: `main; touch ${marker} #` } }),
+  );
+  runHook(prCall, root);
+  assert.equal(existsSync(marker), false);
+});
+
+// Fix round: existsSync(dir) is true for a plain file too, so a ticket
+// directory that has been replaced by a file (rename or refactor gone wrong,
+// no malice needed) used to throw ENOTDIR out of readdirSync uncaught. The
+// hook's own header promises it never blocks - runHook throws if the process
+// exits non-zero, so this only passes if the hook still exits 0.
+test('a ticket path that is a file instead of a directory does not crash the hook', () => {
+  const root = repo({ artifacts: ['docs/features/m5/intake.md'] });
+  rmSync(join(root, 'docs/features/m5'), { recursive: true, force: true });
+  writeFileSync(join(root, 'docs/features/m5'), 'not a directory\n');
+  assert.doesNotThrow(() => runHook(prCall, root));
 });

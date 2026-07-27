@@ -89,7 +89,14 @@ function resolveConfig() {
 
 function artifactReport(config, ticket) {
   const dir = join(cwd, ticketDir(config, ticket));
-  const present = existsSync(dir) ? readdirSync(dir) : [];
+  let present = [];
+  try {
+    present = existsSync(dir) ? readdirSync(dir) : [];
+  } catch {
+    // A path that exists but is not a directory, or is unreadable. Report it
+    // as missing rather than crashing the command.
+    present = [];
+  }
   const missing = missingArtifacts(config, present);
   const pending = conditionalArtifacts(config).filter((a) => !present.includes(a));
 

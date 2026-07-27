@@ -6,7 +6,7 @@
 // agent decide. Silence is the normal case: no config, no PR command, or a
 // complete ticket all produce no output at all.
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -30,7 +30,7 @@ function readStdin() {
 
 function changedPaths(cwd, base) {
   try {
-    return execSync(`git diff --name-only ${base}...HEAD`, {
+    return execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], {
       cwd,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
@@ -61,21 +61,32 @@ function main() {
   // No config means this repo has not opted in. Say nothing.
   if (!exists) return;
   if (errors.length > 0) {
-    emit(`.claude/delivery.json is invalid: ${errors.join('; ')}. Fix it before opening the PR.`);
+    // Config text is untrusted: it arrives with whatever branch is checked out.
+    // Cap it and quote it so it reads as data, not as instructions.
+    const detail = errors.join('; ').replace(/\s+/g, ' ').slice(0, 300);
+    emit(`.claude/delivery.json is invalid. The loader reported: "${detail}". Fix it before opening the PR.`);
     return;
   }
 
   const ticket = inferTicket(changedPaths(cwd, config.git.base), config.docsDir);
   if (ticket === null) {
+    const docsDir = String(config.docsDir).slice(0, 100);
     emit(
-      `Delivery workflow: could not tell which ticket this branch belongs to - no single directory under ${config.docsDir} was touched. ` +
+      `Delivery workflow: could not tell which ticket this branch belongs to - no single directory under ${docsDir} was touched. ` +
         `Before opening the PR, confirm the ticket's artifacts exist and that the configured gates (${Object.keys(config.gates).join(', ') || 'none configured'}) actually ran.`,
     );
     return;
   }
 
   const dir = join(cwd, ticketDir(config, ticket));
-  const present = existsSync(dir) ? readdirSync(dir) : [];
+  let present = [];
+  try {
+    present = existsSync(dir) ? readdirSync(dir) : [];
+  } catch {
+    // A path that exists but is not a directory, or is unreadable. A reminder
+    // is never worth crashing the session for.
+    present = [];
+  }
   const missing = missingArtifacts(config, present);
   const pending = conditionalArtifacts(config).filter((artifact) => !present.includes(artifact));
 
