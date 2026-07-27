@@ -1676,7 +1676,7 @@ This command's output is evidence. Paste what it actually printed.
 - If an artifact is missing, name it and say which stage produces it.
 - If a gate failed, quote the failure. Do not summarise it as "some tests failed".
 - If it printed `no gates configured`, say exactly that. Nothing was verified, and nothing may be claimed.
-- If `decision pending: test-cases.md` appears, the tests question has not been asked yet for this ticket. Ask it now, and record the answer in `plan.md`.
+- If `decision pending: test-cases.md` appears, read `plan.md` before doing anything. The check only knows the file is absent; it cannot read a decision. If `plan.md` already records the tests answer, that record governs and this line is expected noise - do not re-ask. Ask only when `plan.md` has no answer in it, and write the answer there when you get it.
 
 Never report the check as passing on the strength of anything other than a zero exit code.
 ````
