@@ -140,6 +140,8 @@ npm test
 
 No dependencies. Tests are `node --test`, which auto-discovers `test/*.test.js`.
 
+The plugin version lives in `.claude-plugin/plugin.json` and nowhere else. `package.json` deliberately carries none: this is not published to npm, nothing reads a version from it, and a second copy is a second thing to forget. Until 1.0 a breaking change bumps the minor - the config format is still growing, so the major is not a promise this repo can keep yet.
+
 ## License
 
 MIT
