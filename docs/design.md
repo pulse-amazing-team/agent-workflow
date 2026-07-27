@@ -85,7 +85,7 @@ Updating is `/plugin update`. Removing is `/plugin uninstall`.
 }
 ```
 
-Three rules govern how it is read.
+Four rules govern how it is read.
 
 **An absent key means the stage does not exist.**
 `gates` without `e2e` means there is no e2e gate, not that the agent should infer a command.
@@ -100,6 +100,10 @@ Forgetting to configure something yields a stricter process, never a looser one.
 `ts` forbids `any`, non-null `!` and `as T` casts (`as const` stays legal).
 `py`, `go` and `none` carry their own or none.
 Language-independent rules - Conventional Commits, no em dash, never hand-edit generated files - always apply.
+
+**A key it does not recognize is an error.**
+`applyDefaults` builds the resolved config key by key, so an unrecognized key would otherwise vanish without trace and read identically to "absent" - which would let a typo quietly relax the process.
+`loadConfig` reports it instead.
 
 ### Keys
 

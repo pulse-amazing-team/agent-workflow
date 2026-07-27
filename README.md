@@ -18,7 +18,7 @@ This plugin separates the two halves. The process is the same everywhere and liv
 
 **A planning checkpoint.** The agent presents what it is building, what it is deliberately not building, and where the risk is - and waits, before writing code, when anything is product-ambiguous.
 
-**Gates that actually ran.** `/delivery-check` executes the commands you configured and prints their real output. There is no path by which an agent reports a gate it did not run, because the gate is a command with an exit code, not a sentence.
+**Gates that actually ran.** `/delivery-check` executes the commands you configured, prints their real output, and exits non-zero when one fails. A gate is a command with an exit code, not a line in a summary. One caveat worth knowing: a repository that has configured no gates has nothing to fail, so `check` says so plainly and still exits zero. An unconfigured repo is not a verified one, and the message says as much - but do not wire a merge gate to the exit code alone until you have configured at least one.
 
 **An explicit decision about tests.** Not every change is worth a test, and an agent that writes them unasked produces noise. After implementation it stops and asks - once per ticket - and records the answer.
 
