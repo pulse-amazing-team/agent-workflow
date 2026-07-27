@@ -10,7 +10,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { CONFIG_PATH, loadConfig } from '../lib/config.js';
+import { CONFIG_PATH, applyOverrides, loadConfig, parseOverrides } from '../lib/config.js';
 import { proposeConfig, undetectedGates } from '../lib/detect.js';
 import {
   conditionalArtifacts,
@@ -49,11 +49,23 @@ function gitDefaultBranch() {
 function init() {
   const pkg = readJson(join(cwd, 'package.json')) ?? {};
   const files = readdirSync(cwd);
-  const config = proposeConfig({
+  const proposed = proposeConfig({
     files,
     scripts: pkg.scripts ?? {},
     defaultBranch: gitDefaultBranch(),
   });
+
+  const parsed = parseOverrides(rest);
+  const applied = applyOverrides(proposed, parsed.overrides);
+  const errors = [...parsed.errors, ...applied.errors];
+  if (errors.length > 0) {
+    // Reported before anything is written, and all at once: a half-applied
+    // config is worse than none, and fixing one flag per run is miserable.
+    for (const error of errors) console.log(`config error: ${error}`);
+    return 1;
+  }
+
+  const config = applied.config;
   const undetected = undetectedGates(config.gates);
 
   console.log(JSON.stringify({ $schema: SCHEMA_URL, ...config }, null, 2));

@@ -164,3 +164,51 @@ test('status reports missing artifacts instead of crashing when the ticket path 
   assert.equal(code, 1);
   assert.match(stdout, /missing: intake\.md, scope\.md, product\.md, plan\.md/);
 });
+
+test('init --set changes the proposal it prints', () => {
+  const root = scratchRepo({ pkg: { scripts: { test: 'vitest run' } } });
+  const { code, stdout } = run(
+    ['init', '--set', 'stages.tests=true', '--set', 'style.comments=none'],
+    root,
+  );
+  assert.equal(code, 0);
+  const proposed = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
+  assert.equal(proposed.stages.tests, true);
+  assert.equal(proposed.style.comments, 'none');
+});
+
+test('init --set can supply a gate detection could not find', () => {
+  const root = scratchRepo({ pkg: { scripts: { test: 'vitest run' } } });
+  const { stdout } = run(['init', '--set', 'gates.e2e=pnpm run e2e'], root);
+  const proposed = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
+  assert.equal(proposed.gates.e2e, 'pnpm run e2e');
+  assert.doesNotMatch(stdout, /not detected:.*e2e/);
+});
+
+test('init --unset drops a gate detection got wrong', () => {
+  const root = scratchRepo({ pkg: { scripts: { lint: 'eslint .', test: 'vitest run' } } });
+  const { stdout } = run(['init', '--unset', 'gates.lint'], root);
+  const proposed = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
+  assert.equal('lint' in proposed.gates, false);
+  assert.match(stdout, /not detected: lint/);
+});
+
+test('init --write stores the overrides', () => {
+  const root = scratchRepo({ pkg: { scripts: { test: 'vitest run' } } });
+  const { code } = run(
+    ['init', '--write', '--set', 'style.checkpoints=every', '--set', 'git.worktree=false'],
+    root,
+  );
+  assert.equal(code, 0);
+  const written = JSON.parse(readFileSync(join(root, '.claude/delivery.json'), 'utf8'));
+  assert.equal(written.style.checkpoints, 'every');
+  assert.equal(written.git.worktree, false);
+});
+
+test('a bad override exits 1 and writes nothing at all', () => {
+  const root = scratchRepo({ pkg: { scripts: { test: 'vitest run' } } });
+  const { code, stdout } = run(['init', '--write', '--set', 'style.comments=chatty'], root);
+  assert.equal(code, 1);
+  assert.match(stdout, /style\.comments must be one of/);
+  assert.throws(() => readFileSync(join(root, '.claude/delivery.json'), 'utf8'));
+});
