@@ -37,6 +37,10 @@ function readStdin() {
   }
 }
 
+// Returns the paths this branch changed, or null when git could not answer -
+// an unfetched or misnamed base branch, or not a git repo at all. Null and []
+// mean different things and the caller must not conflate them: [] is "nothing
+// under docsDir changed", null is "we never found out".
 function changedPaths(cwd, base) {
   try {
     return execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], {
@@ -47,7 +51,7 @@ function changedPaths(cwd, base) {
       .split('\n')
       .filter(Boolean);
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -74,7 +78,16 @@ function main() {
     return;
   }
 
-  const ticket = inferTicket(changedPaths(cwd, config.git.base), config.docsDir);
+  const changed = changedPaths(cwd, config.git.base);
+  if (changed === null) {
+    emit(
+      `Delivery workflow: could not compare this branch against ${untrusted(config.git.base)} - ` +
+        `that base branch may be misnamed in .claude/delivery.json, or not fetched locally. ` +
+        `Artifact checking is skipped until it resolves. This is a reminder, not a block.`,
+    );
+    return;
+  }
+  const ticket = inferTicket(changed, config.docsDir);
   if (ticket === null) {
     const gateNames = Object.keys(config.gates).join(', ');
     emit(

@@ -196,3 +196,36 @@ test('a long crafted gate name is capped rather than reflected verbatim', () => 
   assert.equal(context.includes(payload), false);
   assert.ok(context.length < 700, `expected a bounded message, got ${context.length} chars`);
 });
+
+// Fix round 3: changedPaths used to catch every git failure - a misnamed or
+// unfetched base branch, or no repo at all - and return [], the same value it
+// returns for a genuine "nothing changed". inferTicket then reported the
+// former as "could not tell which ticket", which is false: nothing was
+// ambiguous, the lookup never ran. A wrong git.base must say so by name, not
+// masquerade as ambiguity.
+test('a git.base that does not exist reports the comparison failure, not ambiguity', () => {
+  const root = repo({
+    config: { git: { base: 'develop' } },
+    artifacts: ['docs/features/m5/intake.md'],
+  });
+  let output;
+  assert.doesNotThrow(() => {
+    output = runHook(prCall, root);
+  });
+  const context = output.hookSpecificOutput.additionalContext;
+  assert.match(context, /develop/);
+  assert.doesNotMatch(context, /could not tell which ticket/);
+});
+
+// Fix round 3, the guard: when git DOES succeed and genuinely finds nothing
+// under docsDir, that is still real ambiguity and must keep using the
+// original message. This is the test that stops a future refactor from
+// collapsing "git failed" (null) and "git succeeded with nothing" ([])
+// back into the same branch.
+test('git succeeding with no touched ticket directory still produces the ambiguity message', () => {
+  const root = repo();
+  const output = runHook(prCall, root);
+  const context = output.hookSpecificOutput.additionalContext;
+  assert.match(context, /could not tell which ticket/);
+  assert.doesNotMatch(context, /could not compare this branch/);
+});
