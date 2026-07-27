@@ -147,20 +147,25 @@ Without that, a multi-session ticket re-asks every session and collects inconsis
 ## Plugin contents
 
 ```
-pulse-amazing-team/agent-workflow
-├── .claude-plugin/marketplace.json
-├── plugins/delivery-workflow/
-│   ├── .claude-plugin/plugin.json
-│   ├── skills/delivery-workflow/
-│   │   ├── SKILL.md              orchestrator: reads config, drives stages
-│   │   └── templates/            intake / scope / product / plan / test-cases
-│   ├── commands/
-│   │   ├── delivery-init.md      inspect repo -> propose delivery.json
-│   │   └── delivery-check.md     run self-check + gates, show real output
-│   └── hooks/hooks.json          soft pre-PR reminder
-├── schema.json                   JSON Schema for delivery.json
-└── README.md                     install in three commands
+pulse-amazing-team/agent-workflow          the plugin IS the repo root
+├── .claude-plugin/
+│   ├── marketplace.json                   source: "./"
+│   └── plugin.json                        manifest + hook registration
+├── skills/delivery-workflow/
+│   ├── SKILL.md                           orchestrator: reads config, drives stages
+│   └── templates/                         intake / scope / product / plan / test-cases
+├── commands/
+│   ├── delivery-init.md                   inspect repo -> propose delivery.json
+│   └── delivery-check.md                  run self-check + gates, show real output
+├── hooks/pre-pr-reminder.js               soft pre-PR reminder
+├── lib/                                   config, detection and status logic (unit-tested)
+├── bin/delivery.js                        CLI the commands and hook call
+├── test/                                  node --test
+├── schema.json                            JSON Schema for delivery.json
+└── README.md                              install in three commands
 ```
+
+A single-plugin marketplace does not need a plugins/ subdirectory, so the plugin is the repository root and marketplace.json points at "./".
 
 `schema.json` gives editor completion and error highlighting, so the config stops being guesswork.
 
