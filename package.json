@@ -1,0 +1,13 @@
+{
+  "name": "agent-workflow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Portable delivery workflow for coding agents",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test"
+  },
+  "bin": { "delivery": "./bin/delivery.js" }
+}

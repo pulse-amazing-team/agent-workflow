@@ -1,0 +1,130 @@
+#!/usr/bin/env node
+// A soft reminder before a PR is opened.
+//
+// It NEVER blocks. A blocking gate breaks legitimate hotfixes and is the first
+// thing a new user disables, so this only injects what is missing and lets the
+// agent decide. Silence is the normal case: no config, no PR command, or a
+// complete ticket all produce no output at all.
+
+import { execFileSync } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { loadConfig } from '../lib/config.js';
+import {
+  conditionalArtifacts,
+  inferTicket,
+  missingArtifacts,
+  ticketDir,
+} from '../lib/status.js';
+
+const PR_COMMAND = /\bgh\s+pr\s+create\b/;
+
+// Everything from .claude/delivery.json is untrusted: that file arrives with
+// whatever branch is checked out, and this hook runs unprompted. Anything from
+// it that reaches the model's context goes through here first - whitespace
+// collapsed so it cannot fake structure, length capped so it cannot flood, and
+// quoted so it reads as data rather than as instructions.
+function untrusted(value, max = 120) {
+  return JSON.stringify(String(value).replace(/\s+/g, ' ').slice(0, max));
+}
+
+function readStdin() {
+  try {
+    return JSON.parse(readFileSync(0, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+// Returns the paths this branch changed, or null when git could not answer -
+// an unfetched or misnamed base branch, or not a git repo at all. Null and []
+// mean different things and the caller must not conflate them: [] is "nothing
+// under docsDir changed", null is "we never found out".
+function changedPaths(cwd, base) {
+  try {
+    return execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .split('\n')
+      .filter(Boolean);
+  } catch {
+    return null;
+  }
+}
+
+function emit(context) {
+  process.stdout.write(
+    JSON.stringify({
+      hookSpecificOutput: { hookEventName: 'PreToolUse', additionalContext: context },
+    }),
+  );
+}
+
+function main() {
+  const payload = readStdin();
+  if (payload === null) return;
+  if (payload.tool_name !== 'Bash') return;
+  if (!PR_COMMAND.test(payload.tool_input?.command ?? '')) return;
+
+  const cwd = process.cwd();
+  const { exists, config, errors } = loadConfig(cwd);
+  // No config means this repo has not opted in. Say nothing.
+  if (!exists) return;
+  if (errors.length > 0) {
+    emit(`.claude/delivery.json is invalid. The loader reported: ${untrusted(errors.join('; '), 300)}. Fix it before opening the PR.`);
+    return;
+  }
+
+  const changed = changedPaths(cwd, config.git.base);
+  if (changed === null) {
+    emit(
+      `Delivery workflow: could not compare this branch against ${untrusted(config.git.base)} - ` +
+        `that base branch may be misnamed in .claude/delivery.json, or not fetched locally. ` +
+        `Artifact checking is skipped until it resolves. This is a reminder, not a block.`,
+    );
+    return;
+  }
+  const ticket = inferTicket(changed, config.docsDir);
+  if (ticket === null) {
+    const gateNames = Object.keys(config.gates).join(', ');
+    emit(
+      `Delivery workflow: could not tell which ticket this branch belongs to - no single directory under ${untrusted(config.docsDir)} was touched. ` +
+        `Before opening the PR, confirm the ticket's artifacts exist and that the configured gates (${gateNames ? untrusted(gateNames) : 'none configured'}) actually ran.`,
+    );
+    return;
+  }
+
+  const dir = join(cwd, ticketDir(config, ticket));
+  let present = [];
+  try {
+    present = existsSync(dir) ? readdirSync(dir) : [];
+  } catch {
+    // A path that exists but is not a directory, or is unreadable. A reminder
+    // is never worth crashing the session for.
+    present = [];
+  }
+  const missing = missingArtifacts(config, present);
+  const pending = conditionalArtifacts(config).filter((artifact) => !present.includes(artifact));
+
+  const notes = [];
+  if (missing.length > 0) {
+    notes.push(`missing artifacts in ${untrusted(ticketDir(config, ticket))}: ${missing.join(', ')}`);
+  }
+  if (pending.length > 0) {
+    notes.push(`the tests decision has not been recorded for ${untrusted(ticket)} - ask, then write it into plan.md`);
+  }
+  if (Object.keys(config.gates).length === 0) {
+    notes.push('this repo has configured no gates, so nothing will be verified by running them');
+  }
+  if (notes.length === 0) return;
+
+  emit(
+    `Delivery workflow reminder for ${untrusted(ticket)}: ${notes.join('; ')}. ` +
+      `Run /delivery-check ${untrusted(ticket)} for the full picture. This is a reminder, not a block.`,
+  );
+}
+
+main();

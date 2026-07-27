@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "agent-workflow",
+  "description": "A delivery process for coding agents: staged artifacts, real verification gates, and a pre-PR self-check, configured per repository.",
+  "owner": {
+    "name": "pulse-amazing-team",
+    "url": "https://github.com/pulse-amazing-team"
+  },
+  "plugins": [
+    {
+      "name": "delivery-workflow",
+      "description": "Ship every ticket through the same staged process, with per-repo configuration.",
+      "source": "./",
+      "category": "workflow"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/pulse-amazing-team/agent-workflow/main/schema.json",
+  "title": "Delivery workflow configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "language": {
+      "enum": ["ts", "py", "go", "none"],
+      "default": "none",
+      "description": "Which hard-rule set applies. ts forbids any, non-null ! and as T casts."
+    },
+    "docsDir": {
+      "type": "string",
+      "pattern": "\\S",
+      "default": "docs/features",
+      "description": "Where per-ticket artifacts live."
+    },
+    "tracker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": ["link"],
+          "default": "link",
+          "description": "link: read a pasted ticket URL, write nothing back."
+        }
+      }
+    },
+    "stages": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "intake": { "type": "boolean", "default": true },
+        "tests": {
+          "oneOf": [{ "type": "boolean" }, { "const": "ask" }],
+          "default": "ask",
+          "description": "ask: stop after implementation and ask the human whether to write tests."
+        }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "pattern": "\\S" },
+      "description": "Shell command per gate. An absent key means the gate does not exist.",
+      "properties": {
+        "lint": { "type": "string", "pattern": "\\S" },
+        "typecheck": { "type": "string", "pattern": "\\S" },
+        "test": { "type": "string", "pattern": "\\S" },
+        "e2e": { "type": "string", "pattern": "\\S" },
+        "build": { "type": "string", "pattern": "\\S" }
+      }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "base": { "type": "string", "pattern": "\\S", "default": "main" },
+        "worktree": { "type": "boolean", "default": true },
+        "squash": { "type": "boolean", "default": true }
+      }
+    }
+  }
+}

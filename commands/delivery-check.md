@@ -1,0 +1,25 @@
+---
+description: Verify a ticket's artifacts and actually run the configured gates
+allowed-tools: Bash, Read, Edit
+---
+
+Run the real pre-PR check for a ticket.
+
+The ticket key is `$ARGUMENTS`. If it is empty, look at the current branch name and the paths this branch touched under the configured `docsDir`, propose the key you infer, and confirm it with the user before running anything.
+
+## Run it
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/delivery.js" check <ticket>
+```
+
+## Report honestly
+
+This command's output is evidence. Paste what it actually printed.
+
+- If an artifact is missing, name it and say which stage produces it.
+- If a gate failed, quote the failure. Do not summarise it as "some tests failed".
+- If it printed `no gates configured`, say exactly that. Nothing was verified, and nothing may be claimed.
+- If `decision pending: test-cases.md` appears, read `plan.md` before doing anything. The check only knows the file is absent; it cannot read a decision. If `plan.md` already records the tests answer, that record governs and this line is expected noise - do not re-ask. Ask only when `plan.md` has no answer in it, and write the answer there when you get it.
+
+Never report the check as passing on anything weaker than a zero exit code - and not on a zero exit code alone when no gates were configured, because then nothing ran.
