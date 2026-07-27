@@ -8,5 +8,6 @@
   "engines": { "node": ">=22" },
   "scripts": {
     "test": "node --test"
-  }
+  },
+  "bin": { "delivery": "./bin/delivery.js" }
 }
