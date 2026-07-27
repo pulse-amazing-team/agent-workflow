@@ -29,12 +29,20 @@ The repo's own `AGENTS.md` or `CLAUDE.md` carries stack, layout and domain conve
 
 The key names the artifact directory exactly as given: `<docsDir>/<ticket>/`. `ticketDir()` and the check command use it verbatim, with no case normalization - use the same spelling every time, since a filesystem that is case-sensitive will treat `M-1` and `m-1` as different directories.
 
+## The rule
+
+**Do NOT jump to code.** Work the stages below in order, top to bottom, and create a todo per stage before you start so that skipping one is visible rather than silent.
+
+The first stage is the one most often skipped, and skipping it is what produces work nobody asked for. Do not treat it as paperwork to be filled in after the fact.
+
 ## Stages
 
-Work them in order. Create a todo per stage.
+**0. Intake** (`intake.md`) - skip ONLY if `stages.intake` is false in the config.
+Capture the raw ask and your assumptions. Then **STOP** and groom: ask the human your clarifying questions in ONE batch - scope, flow, edge cases, acceptance, data - and **WAIT for the answers before writing anything else**. Do not proceed to stage 1 on assumptions you could have checked in a sentence.
 
-**0. Intake** (`intake.md`) - skip if `stages.intake` is false.
-Capture the raw ask and your assumptions, then groom: ask the human your clarifying questions in ONE batch - scope, flow, edge cases, acceptance, data - and WAIT for answers. Record the questions, the answers, and the decisions. Note a default only where a question went unanswered. If nothing is genuinely unclear, say so; do not invent busywork questions.
+Record the questions, the answers, and the decisions in `intake.md`. Note a default only where a question went unanswered.
+
+If the ask is genuinely unambiguous, say so in one line and move on - do not invent busywork questions. But "I think I understand it" is not the same as unambiguous, and the cost of one batch of questions is far below the cost of building the wrong thing.
 
 **1. Scope** (`scope.md`) - what is in, what is out, affected surfaces, dependencies, explicit non-goals.
 
