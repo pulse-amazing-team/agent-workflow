@@ -1079,16 +1079,20 @@ git commit -m "feat(cli): add init, status and check subcommands"
 
 ---
 
-### Task 5: Plugin manifests and README
+### Task 5: Plugin manifests, README and a product-neutral design doc
 
 **Files:**
 - Create: `.claude-plugin/marketplace.json`
 - Create: `.claude-plugin/plugin.json`
-- Modify: `README.md`
+- Replace: `README.md`
+- Rewrite: `docs/design.md`
+- Modify: `package.json` (drop the org scope from `name`)
 
 **Interfaces:**
-- Consumes: nothing.
+- Consumes: `bin/delivery.js` (Task 4).
 - Produces: an installable plugin. `${CLAUDE_PLUGIN_ROOT}` resolves to the repo root at runtime, so commands and hooks reference `${CLAUDE_PLUGIN_ROOT}/bin/delivery.js`.
+
+**Standing requirement for this task.** The word `pulse` must not appear anywhere in `README.md` or `docs/design.md` as the name of a product or a case study. The repository's address is `pulse-amazing-team/agent-workflow` and that string stays wherever a real URL is needed - install commands, the schema `$id`, the manifest owner - because it is where the code actually lives. What goes is every reference to a particular product's codebase, its stack, its board, or its migration. A reader must be able to understand this repo without knowing that any of that exists.
 
 - [ ] **Step 1: Create `.claude-plugin/marketplace.json`**
 
@@ -1096,7 +1100,7 @@ git commit -m "feat(cli): add init, status and check subcommands"
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "agent-workflow",
-  "description": "Portable delivery workflow for coding agents: staged artifacts, gates and a pre-PR self-check, configured per repository.",
+  "description": "A delivery process for coding agents: staged artifacts, real verification gates, and a pre-PR self-check, configured per repository.",
   "owner": {
     "name": "pulse-amazing-team",
     "url": "https://github.com/pulse-amazing-team"
@@ -1141,16 +1145,36 @@ git commit -m "feat(cli): add init, status and check subcommands"
 }
 ```
 
-- [ ] **Step 3: Replace `README.md`**
+- [ ] **Step 3: Drop the org scope from the package name**
+
+In `package.json`, change `"name": "@pulse-amazing-team/agent-workflow"` to `"name": "agent-workflow"`. The package is `private: true` and is never published, so the scope bought nothing and only put a product name where it does not belong. Change nothing else in the file.
+
+- [ ] **Step 4: Replace `README.md` entirely with exactly this**
 
 ````markdown
 # agent-workflow
 
-A portable delivery workflow for coding agents, distributed as a Claude Code plugin.
+A delivery process for coding agents, distributed as a Claude Code plugin.
 
-Every ticket ships through the same stages - intake, scope, product, plan, implementation, an explicit decision about tests, then verification gates and a pre-PR self-check. Each stage leaves a real artifact, so a second person can pick a ticket up from its docs alone.
+Install it once, run one command per repository, and every ticket from then on goes through the same stages - with the parts that differ between projects living in a small file you commit alongside your code.
 
-The process lives here once. Everything project-specific lives in the project.
+## The problem it solves
+
+Hand an agent a ticket and, left alone, it will usually start typing code. What you get back is a diff with no record of what was decided or rejected, tests that may or may not exist, and a claim that everything passes. Ask a second person - or a second agent, next week - to pick the work up, and there is nothing to pick up from.
+
+The usual fix is a long list of rules in a `CLAUDE.md` or `AGENTS.md`. That works until you have a second repository. Then the rules are copied, the copies drift, and nothing can be switched off for the project that genuinely does not need it.
+
+This plugin separates the two halves. The process is the same everywhere and lives here. The facts that differ - what your gates actually are, which branch you target, what language you write - live in `.claude/delivery.json` in your repo, in git, visible on review.
+
+## What you get
+
+**Staged work with artifacts that outlive the session.** Intake, scope, product, plan, implementation, then a decision about tests. Each stage leaves a file under `docs/features/<ticket>/`. A month later the reasoning is still there.
+
+**A planning checkpoint.** The agent presents what it is building, what it is deliberately not building, and where the risk is - and waits, before writing code, when anything is product-ambiguous.
+
+**Gates that actually ran.** `/delivery-check` executes the commands you configured and prints their real output. There is no path by which an agent reports a gate it did not run, because the gate is a command with an exit code, not a sentence.
+
+**An explicit decision about tests.** Not every change is worth a test, and an agent that writes them unasked produces noise. After implementation it stops and asks - once per ticket - and records the answer.
 
 ## Install
 
@@ -1165,11 +1189,11 @@ Then once per repository:
 /delivery-init
 ```
 
-It inspects the repo - package manager, scripts, language, default branch - and proposes a `.claude/delivery.json`. It never invents a command it could not find; gates it cannot detect are listed so you can add them by hand.
+It reads your repo - package manager, scripts, language, default branch - and proposes a config. It never invents a command it could not find: gates it cannot detect are listed by name so you can add them yourself. Review it, then commit it.
 
 ## Configuration
 
-`.claude/delivery.json`, committed to the repo:
+`.claude/delivery.json`, committed to your repo:
 
 ```json
 {
@@ -1187,28 +1211,68 @@ It inspects the repo - package manager, scripts, language, default branch - and 
 }
 ```
 
-Three rules govern how it is read:
+Four rules govern how it is read.
 
-**An absent `gates` key means the gate does not exist.** It does not mean "guess the command". This removes the most common failure mode: an agent reporting that it ran gates when it ran nothing.
+**An absent `gates` key means the gate does not exist.** It does not mean "guess the command". Nothing is inferred, so nothing can be reported as run when it was not.
 
-**Defaults are strict.** Anything unspecified is on and mandatory. Relaxing a rule takes an explicit line in a file that lives in git and shows up in review. Forgetting to configure something gives you a stricter process, never a looser one.
+**Defaults are strict.** Anything you leave out is on and mandatory. Relaxing a rule takes an explicit line in a file that lives in git and shows up in review. Forgetting to configure something gives you a stricter process, never a looser one.
 
-**`language` selects the hard-rule set.** `ts` forbids `any`, non-null `!` and `as T` casts. Language-independent rules - Conventional Commits, never hand-editing generated files - always apply.
+**A key it does not recognise is an error.** A typo like `gate` for `gates` would otherwise vanish silently and read exactly like "absent", which is the same failure the first rule exists to prevent.
 
-See [schema.json](schema.json) for every key, or [docs/design.md](docs/design.md) for why it is shaped this way.
+**`language` selects the hard-rule set.** `ts` forbids `any`, non-null `!` and `as T` casts. `py`, `go` and `none` carry their own or none. Rules that do not depend on language - Conventional Commits, never hand-editing generated files - always apply.
+
+Every key is documented in [schema.json](schema.json). Point your editor at it through the `$schema` line and you get completion and inline errors instead of guesswork.
+
+### Keys
+
+| Key | Values | Default | Meaning |
+|---|---|---|---|
+| `language` | `ts` `py` `go` `none` | `none` | Which hard-rule set applies |
+| `docsDir` | path | `docs/features` | Where per-ticket artifacts live |
+| `tracker.mode` | `link` | `link` | Read a pasted ticket URL, write nothing back |
+| `stages.intake` | boolean | `true` | Whether the grooming stage runs |
+| `stages.tests` | `ask` `true` `false` | `ask` | See below |
+| `gates.*` | shell command | absent | One per gate. Absent means the gate does not exist |
+| `git.base` | branch | `main` | What PRs target |
+| `git.worktree` | boolean | `true` | Whether each ticket gets its own worktree |
+| `git.squash` | boolean | `true` | Whether PRs squash-merge |
 
 ## The tests decision
 
-`stages.tests` is `"ask"` by default. After implementation the agent stops and asks whether tests are in scope. On yes it runs a short question session - what is worth covering, where the unit/e2e boundary sits, which cases are genuinely risky - and the answers become `test-cases.md`.
+`stages.tests` defaults to `"ask"`. After implementation the agent stops and asks whether tests are in scope. If yes, it runs a short exchange - what is worth covering, where the unit and end-to-end boundary sits, which cases are genuinely risky rather than merely enumerable - and the answers become `test-cases.md`.
 
-The question is asked once per ticket and the answer is recorded in `plan.md`, so a multi-session ticket does not re-litigate it.
+It asks once per ticket and records the answer in `plan.md`, so a ticket spanning several sessions does not re-open the question and collect different answers.
 
-Set it to `true` to always write tests, `false` to drop the test stages entirely - in which case the test items also drop out of the self-check, so there is nothing to misreport.
+Set it to `true` to always write tests. Set it to `false` and the test stages stop existing for that repo - and the test items drop out of the pre-PR check too, so there is nothing left to misreport.
 
 ## Commands
 
-- `/delivery-init` - inspect the repo and propose a config
-- `/delivery-check <ticket>` - verify artifacts and actually run the gates, printing real output
+| Command | What it does |
+|---|---|
+| `/delivery-init` | Read the repo, propose a config, write it after you approve |
+| `/delivery-check <ticket>` | Verify the ticket's artifacts, then actually run the gates and print their output |
+
+A non-blocking reminder also fires before `gh pr create`, listing anything the repo's own config says is missing. It never blocks: a gate you cannot get past is a gate people disable.
+
+## What it deliberately does not do
+
+**It does not manage your issue tracker.** `tracker.mode` is `link`: you paste a ticket URL, the agent reads it for context and takes the key, and writes nothing back. No moves, no labels, no comments. Tracker automation belongs to your repo, not to a shared process.
+
+**It does not block anything.** Every check reports; none refuse. Enforcement that gets in the way during an incident is enforcement that gets uninstalled.
+
+**It does not know anything about your project.** No stack, no paths, no commands. If you find project-specific knowledge creeping into this repo, that is a bug - the whole design rests on that separation.
+
+## How it fits together
+
+Three layers, and the boundaries matter more than the contents:
+
+| Layer | Lives in | Holds |
+|---|---|---|
+| Process | this plugin | The stages, the templates, the self-check. Identical everywhere |
+| Configuration | `.claude/delivery.json` | Gate commands, which stages are on, language, git conventions |
+| Project knowledge | your `AGENTS.md` | Stack, layout, domain conventions, gotchas |
+
+[docs/design.md](docs/design.md) records why it is shaped this way, including the alternatives that were rejected.
 
 ## Development
 
@@ -1217,22 +1281,45 @@ npm test
 ```
 
 No dependencies. Tests are `node --test`, which auto-discovers `test/*.test.js`.
+
+## License
+
+MIT
 ````
 
-- [ ] **Step 4: Verify the manifests parse**
+- [ ] **Step 5: Rewrite `docs/design.md` to be product-neutral**
+
+The design doc currently explains the problem, the migration and several decisions in terms of one specific product's codebase. Rewrite it so a reader who has never seen that codebase loses nothing.
+
+Concretely:
+
+- The `## Problem` section must describe the problem generically: process discipline that exists only inside one repository cannot be reused, cannot be configured per project, and cannot be handed to another person. Do not name a product, its files, or its stack.
+- In the decisions table, replace the tracker row's justification so it reads as a general statement - tracker automation stays repo-local - without naming a product's board.
+- Replace the entire `## pulse migration` section with a section titled `## Adopting an existing repository`, written generically: what moves out of the repo's own instructions and into the plugin (the stage list, the pre-PR self-check, the ticket intake rules), what stays (stack, layout, domain conventions, gotchas, any tracker automation), and what gets added (`.claude/delivery.json`).
+- Remove the paragraph about one repo's stale skill symlinks entirely. It was a finding about one codebase, not a design decision.
+- In `## Decisions`, the "Other agents" row must state that the plugin targets Claude Code, without describing what some other repository will lose.
+- Keep the rest: the three layers, distribution, the config and its rules, the key table, the stage model, the tests gate, plugin contents, enforcement, out of scope, and risks. Those are already product-neutral - verify each and fix any stragglers.
+
+When you are done, run `grep -ri pulse README.md docs/design.md`. The only permitted hits are inside URLs (`pulse-amazing-team/agent-workflow`, `raw.githubusercontent.com/...`). Any other hit is a defect - fix it.
+
+- [ ] **Step 6: Verify every JSON file still parses**
 
 Run: `node -e "for (const f of ['.claude-plugin/marketplace.json','.claude-plugin/plugin.json','schema.json','package.json']) { JSON.parse(require('fs').readFileSync(f,'utf8')); console.log(f, 'ok'); }"`
-Expected: four `ok` lines
+Expected: four `ok` lines.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Confirm nothing else broke**
+
+Run: `npm test`
+Expected: 51 passing, exit 0. This task changes no code, so any failure means something unrelated was disturbed - stop and report rather than fixing it here.
+
+- [ ] **Step 8: Commit**
 
 ```bash
-git add .claude-plugin/marketplace.json .claude-plugin/plugin.json README.md
-git commit -m "feat(plugin): add marketplace and plugin manifests"
+git add .claude-plugin/ README.md docs/design.md package.json
+git commit -m "feat(plugin): add the marketplace and plugin manifests"
 ```
 
 ---
-
 ### Task 6: The skill and its templates
 
 **Files:**
