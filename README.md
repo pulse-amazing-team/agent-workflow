@@ -65,7 +65,7 @@ Four rules govern how it is read.
 
 **A key it does not recognise is an error.** A typo like `gate` for `gates` would otherwise vanish silently and read exactly like "absent", which is the same failure the first rule exists to prevent.
 
-**`language` selects the hard-rule set.** `ts` forbids `any`, non-null `!` and `as T` casts. `py`, `go` and `none` carry their own or none. Rules that do not depend on language - Conventional Commits, never hand-editing generated files - always apply.
+**`language` selects the hard-rule set.** `ts` forbids `any`, non-null `!` and `as T` casts. Only `ts` currently carries a rule set; `py`, `go` and `none` reserve the slot for one, not yet defined. Rules that do not depend on language - Conventional Commits, never hand-editing generated files - always apply.
 
 Every key is documented in [schema.json](schema.json). Point your editor at it through the `$schema` line and you get completion and inline errors instead of guesswork.
 

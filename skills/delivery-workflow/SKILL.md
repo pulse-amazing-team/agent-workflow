@@ -27,7 +27,7 @@ The repo's own `AGENTS.md` or `CLAUDE.md` carries stack, layout and domain conve
 
 `tracker.mode` is `link`: the human pastes a ticket URL or names a key. Read it for context, take the key, and write nothing back to the tracker - no moves, no labels, no comments.
 
-The key, lowercased, names the artifact directory: `<docsDir>/<ticket>/`.
+The key names the artifact directory exactly as given: `<docsDir>/<ticket>/`. `ticketDir()` and the check command use it verbatim, with no case normalization - use the same spelling every time, since a filesystem that is case-sensitive will treat `M-1` and `m-1` as different directories.
 
 ## Stages
 
@@ -67,6 +67,12 @@ Run the real check:
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/bin/delivery.js" check <ticket>
 ```
+
+If that fails with a module error, `${CLAUDE_PLUGIN_ROOT}` was not set in this
+context. Find the CLI under `~/.claude/plugins/cache/` - it is
+`agent-workflow/delivery-workflow/*/bin/delivery.js` - and run it by full path.
+Do not skip the check and do not describe its result from memory: without the
+command's real output there is nothing to report.
 
 It verifies the artifacts and actually runs the configured gates. Paste its output. If a gate fails, quote the failure - never claim green blind.
 

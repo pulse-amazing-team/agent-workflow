@@ -26,7 +26,7 @@ const PR_COMMAND = /\bgh\s+pr\s+create\b/;
 // collapsed so it cannot fake structure, length capped so it cannot flood, and
 // quoted so it reads as data rather than as instructions.
 function untrusted(value, max = 120) {
-  return `"${String(value).replace(/\s+/g, ' ').slice(0, max)}"`;
+  return JSON.stringify(String(value).replace(/\s+/g, ' ').slice(0, max));
 }
 
 function readStdin() {
@@ -114,7 +114,7 @@ function main() {
     notes.push(`missing artifacts in ${untrusted(ticketDir(config, ticket))}: ${missing.join(', ')}`);
   }
   if (pending.length > 0) {
-    notes.push(`the tests decision has not been recorded for ${ticket} - ask, then write it into plan.md`);
+    notes.push(`the tests decision has not been recorded for ${untrusted(ticket)} - ask, then write it into plan.md`);
   }
   if (Object.keys(config.gates).length === 0) {
     notes.push('this repo has configured no gates, so nothing will be verified by running them');
@@ -122,8 +122,8 @@ function main() {
   if (notes.length === 0) return;
 
   emit(
-    `Delivery workflow reminder for ${ticket}: ${notes.join('; ')}. ` +
-      `Run /delivery-check ${ticket} for the full picture. This is a reminder, not a block.`,
+    `Delivery workflow reminder for ${untrusted(ticket)}: ${notes.join('; ')}. ` +
+      `Run /delivery-check ${untrusted(ticket)} for the full picture. This is a reminder, not a block.`,
   );
 }
 

@@ -78,7 +78,7 @@ Updating is `/plugin update`. Removing is `/plugin uninstall`.
     "lint": "pnpm lint",
     "typecheck": "pnpm typecheck",
     "test": "pnpm test",
-    "e2e": "pnpm turbo run e2e",
+    "e2e": "pnpm e2e",
     "build": "pnpm build"
   },
   "git": { "base": "main", "worktree": true, "squash": true }
@@ -98,7 +98,7 @@ Forgetting to configure something yields a stricter process, never a looser one.
 
 **`language` selects the hard-rule set.**
 `ts` forbids `any`, non-null `!` and `as T` casts (`as const` stays legal).
-`py`, `go` and `none` carry their own or none.
+Only `ts` currently carries a rule set; `py`, `go` and `none` reserve the slot for one, not yet defined.
 Language-independent rules - Conventional Commits and never hand-edit generated files - always apply.
 
 **A key it does not recognize is an error.**
@@ -174,9 +174,10 @@ A single-plugin marketplace does not need a plugins/ subdirectory, so the plugin
 
 ## Enforcement
 
-A non-blocking hook fires before `gh pr create` and injects a list of what is missing against the repo's config: absent artifacts, gates with no recorded output, self-check items not met.
+A non-blocking hook fires before `gh pr create` and injects a list of what the repo's config says is missing: absent artifacts, an unrecorded tests decision, and a repository that has configured no gates.
 It does not block.
 A blocking gate was considered and rejected - it breaks legitimate hotfixes, and a tool that gets in the way is a tool people disable.
+The hook cannot know whether the gates were actually run in this session, so a complete ticket with configured gates produces silence.
 
 `/delivery-check` runs the same evaluation on demand and prints real command output rather than a claim.
 

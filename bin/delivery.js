@@ -138,7 +138,10 @@ function check() {
   for (const [name, command] of gates) {
     console.log(`\n--- gate ${name}: ${command}`);
     try {
-      execSync(command, { cwd, stdio: 'inherit' });
+      // stdin is 'ignore', not 'inherit': a gate that prompts, or defaults to
+      // watch mode, would otherwise hang `check` forever and produce no
+      // evidence at all. Output still streams to the user in real time.
+      execSync(command, { cwd, stdio: ['ignore', 'inherit', 'inherit'] });
       console.log(`gate ${name} passed`);
     } catch (error) {
       console.log(`gate ${name} FAILED (exit ${error.status})`);

@@ -63,6 +63,22 @@ test('an empty gate command is an error, because it would silently run nothing',
   assert.match(errors[0], /gates\.lint/);
 });
 
+// git parses a leading dash as an option, so a crafted base can turn
+// `git diff` into an arbitrary-file-write primitive - reproduced with
+// {"git":{"base":"--output=/tmp/x"}}, which made git write a file named
+// after the ...HEAD suffix. This must be rejected before it ever reaches git.
+test('a git.base that looks like a command-line flag is an error', () => {
+  const errors = validate(applyDefaults({ git: { base: '--output=/tmp/x' } }));
+  assert.ok(errors.length > 0);
+  assert.ok(errors.some((error) => /git\.base/.test(error)));
+});
+
+test('a git.base carrying shell metacharacters is an error', () => {
+  const errors = validate(applyDefaults({ git: { base: 'main; touch /tmp/x' } }));
+  assert.ok(errors.length > 0);
+  assert.ok(errors.some((error) => /git\.base/.test(error)));
+});
+
 test('a missing config file yields defaults and is reported as absent', () => {
   const root = mkdtempSync(join(tmpdir(), 'delivery-'));
   const result = loadConfig(root);
@@ -113,6 +129,21 @@ test('a config file containing null is an error, not a crash', () => {
   const result = loadConfig(repoWith('null'));
   assert.equal(result.errors.length, 1);
   assert.match(result.errors[0], /must contain a JSON object/);
+});
+
+// "gates": [] or "gates": null both spread to {} in applyDefaults, which
+// reads identically to "no gates configured" - the same silent-drop the
+// unknown-key rule exists to prevent, just one layer up.
+test('gates as an array is an error, not a silent "no gates configured"', () => {
+  const result = loadConfig(repoWith(JSON.stringify({ gates: [] })));
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /gates must be an object/);
+});
+
+test('gates as null is an error, not a silent "no gates configured"', () => {
+  const result = loadConfig(repoWith(JSON.stringify({ gates: null })));
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /gates must be an object/);
 });
 
 test('unknown keys are reported before validation errors', () => {
