@@ -1733,6 +1733,7 @@ Expected: FAIL - the hook file does not exist
 // agent decide. Silence is the normal case: no config, no PR command, or a
 // complete ticket all produce no output at all.
 
+import { execSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -1756,7 +1757,6 @@ function readStdin() {
 
 function changedPaths(cwd, base) {
   try {
-    const { execSync } = require('node:child_process');
     return execSync(`git diff --name-only ${base}...HEAD`, {
       cwd,
       encoding: 'utf8',
@@ -1824,38 +1824,12 @@ function main() {
 main();
 ```
 
-- [ ] **Step 4: Fix the CommonJS require in an ESM file**
-
-The `require('node:child_process')` inside `changedPaths` will throw in an ES module. Replace the import at the top of the file:
-
-```js
-import { execSync } from 'node:child_process';
-```
-
-and the body of `changedPaths` becomes:
-
-```js
-function changedPaths(cwd, base) {
-  try {
-    return execSync(`git diff --name-only ${base}...HEAD`, {
-      cwd,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    })
-      .split('\n')
-      .filter(Boolean);
-  } catch {
-    return [];
-  }
-}
-```
-
-- [ ] **Step 5: Run test to verify it passes**
+- [ ] **Step 4: Run test to verify it passes**
 
 Run: `npm test`
 Expected: PASS, 52 tests total
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add hooks/pre-pr-reminder.js test/hook.test.js
@@ -2108,4 +2082,4 @@ git worktree prune
 
 **Out of scope, as the spec says.** No tracker adapters beyond `link`, no Codex support, no blocking enforcement, no npm publish. None of these have tasks, which is correct.
 
-**Known rough edge.** Task 8 step 3 writes a `require()` call inside an ES module and step 4 immediately fixes it. That is deliberate: the mistake is easy to make when moving code between module systems, and the test written in step 1 catches it. If the implementer writes the import correctly the first time, step 4 is a no-op and the tests still pass.
+**Removed before execution.** An earlier draft of Task 8 deliberately wrote a `require()` call inside an ES module so a later step could fix it. That is a defect a reviewer would rightly flag, and making someone adjudicate a bug the plan planted is waste. The task now writes the correct `import` the first time.
