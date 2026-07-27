@@ -1,6 +1,6 @@
 ---
 description: Verify a ticket's artifacts and actually run the configured gates
-allowed-tools: Bash, Read
+allowed-tools: Bash, Read, Edit
 ---
 
 Run the real pre-PR check for a ticket.
@@ -22,4 +22,4 @@ This command's output is evidence. Paste what it actually printed.
 - If it printed `no gates configured`, say exactly that. Nothing was verified, and nothing may be claimed.
 - If `decision pending: test-cases.md` appears, read `plan.md` before doing anything. The check only knows the file is absent; it cannot read a decision. If `plan.md` already records the tests answer, that record governs and this line is expected noise - do not re-ask. Ask only when `plan.md` has no answer in it, and write the answer there when you get it.
 
-Never report the check as passing on the strength of anything other than a zero exit code.
+Never report the check as passing on anything weaker than a zero exit code - and not on a zero exit code alone when no gates were configured, because then nothing ran.

@@ -27,7 +27,7 @@ Show the proposal. Then say, in your own words:
 - which gates were NOT detected - these are real gaps, not defaults. If the repo has them under other script names, the user should say so now.
 - that `stages.tests` is `"ask"`, meaning the agent will stop after implementation and ask whether tests are in scope
 
-Ask whether to write it as-is or adjust anything first.
+Ask whether to write it as-is or adjust anything first, then STOP and WAIT for the answer. Do not run Step 4 until the user has replied. Writing a config they have not seen is how a repo ends up with gates nobody chose.
 
 ## Step 4: Write it
 
