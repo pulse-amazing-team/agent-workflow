@@ -18,6 +18,12 @@
 
 <or: no tests, per the decision recorded in plan.md>
 
+## Code review
+
+- <finding> - <fixed / does not apply, because ...>
+
+<or: skipped by the human>
+
 ## Proof
 
 <screenshot or captured output from proof/>
