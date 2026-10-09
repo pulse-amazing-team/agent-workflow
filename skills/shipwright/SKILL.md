@@ -1,19 +1,19 @@
 ---
-name: delivery-workflow
+name: shipwright
 description: Use when starting or implementing any ticket - the staged delivery process. Invoke BEFORE writing code, so scope, product and plan land before implementation.
 ---
 
-# Delivery workflow
+# Shipwright
 
 Every ticket ships through the same stages, each leaving a real artifact, so any developer or agent can pick the ticket up from its docs alone.
 
 ## First: read the repo's config
 
 ```bash
-cat .claude/delivery.json
+cat .claude/shipwright.json
 ```
 
-If it does not exist, say so and offer `/delivery-init`. Do not guess the repo's commands.
+If it does not exist, say so and offer `/shipwright-init`. Do not guess the repo's commands.
 
 Everything below is shaped by that file. Three rules:
 
@@ -89,6 +89,10 @@ Then post a **planning checkpoint** to the human: what you are building, what yo
 
 Ask once per ticket. The answer lives in `plan.md` so a later session does not re-open it.
 
+**No useless tests.** Whatever the decision, test only the logic this ticket adds or changes.
+Do not add tests for untouched code, for framework or library behaviour, for trivial getters and pass-throughs, or to raise a coverage number.
+Every test must fail if the new logic were removed or broken; a test that would still pass is noise, so delete it.
+
 **5. Test cases** (`test-cases.md`) - enumerate happy, edge and failure cases, each mapped to a concrete test.
 
 **6. Unit tests** - write business logic test-first: red, green, refactor. Cover logic - branches, edge cases, calculations, error paths, state transitions. Do NOT assert data shape; the type system owns shape, and a shape-only test breaks on refactors while proving nothing.
@@ -100,12 +104,12 @@ Ask once per ticket. The answer lives in `plan.md` so a later session does not r
 Run the real check:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/bin/delivery.js" check <ticket>
+node "${CLAUDE_PLUGIN_ROOT}/bin/shipwright.js" check <ticket>
 ```
 
 If that fails with a module error, `${CLAUDE_PLUGIN_ROOT}` was not set in this
 context. Find the CLI under `~/.claude/plugins/cache/` - it is
-`agent-workflow/delivery-workflow/*/bin/delivery.js` - and run it by full path.
+`agent-workflow/shipwright/*/bin/shipwright.js` - and run it by full path.
 Do not skip the check and do not describe its result from memory: without the
 command's real output there is nothing to report.
 
@@ -124,6 +128,57 @@ Then confirm by hand:
 - No forbidden constructs for the configured `language`.
 - No generated file hand-edited.
 
+## Proof
+
+Green gates are not proof.
+Prove the feature works, or the bug is gone, by exercising it the way a user would.
+
+- UI change - a screenshot of the result. For a bug, a screenshot before the fix and one after.
+- API or backend change - the real request and response, or the log line, that shows the new behaviour.
+- CLI or script - the command and its real output.
+- Anything else - the closest observable evidence, and one line on why it proves the change.
+
+Save screenshots and captured output under `<docsDir>/<ticket>/proof/`.
+If proof is genuinely impossible (no environment, no credentials), say so and name what is missing.
+Never claim done without proof or that explicit statement.
+
+## Brief
+
+After proof, write `brief.md` from the template and post a short version of it in chat:
+
+- **Task** - what we needed to do, in one or two sentences.
+- **Fix** - how it was done: the approach, not a diff walkthrough.
+- **Manual check** - numbered steps a human can follow, with the expected result at each step.
+- **Test coverage** - which tests cover the new logic, or the recorded "no tests" decision.
+- **Proof** - the screenshot or captured output from `proof/`.
+
+## Merge request
+
+Do not open, push or publish an MR on your own.
+After the brief, **ASK** the human whether to publish the MR and **WAIT** for an explicit yes.
+Approval to publish is not approval to merge.
+
+The title follows Conventional Commits.
+The body has exactly these sections, in this order:
+
+```markdown
+## What changed
+
+<the change and why, in a few lines>
+
+## How to test
+
+1. <step> - <expected result>
+
+## Useful code paths
+
+- `path/to/file.ts` - <what to look at there>
+
+## Proof
+
+<screenshot or captured output>
+```
+
 ## Ticket intake
 
 When you create a ticket rather than receive one, it is incomplete without:
@@ -135,4 +190,4 @@ Before creating one, search the existing tickets and the code: the thing may alr
 
 ## Templates
 
-Copy from `${CLAUDE_PLUGIN_ROOT}/skills/delivery-workflow/templates/`.
+Copy from `${CLAUDE_PLUGIN_ROOT}/skills/shipwright/templates/`.

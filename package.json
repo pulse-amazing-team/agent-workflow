@@ -8,5 +8,5 @@
   "scripts": {
     "test": "node --test"
   },
-  "bin": { "delivery": "./bin/delivery.js" }
+  "bin": { "shipwright": "./bin/shipwright.js" }
 }

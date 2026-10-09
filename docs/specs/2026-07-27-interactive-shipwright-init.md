@@ -1,11 +1,11 @@
-# Interactive `/delivery-init`
+# Interactive `/shipwright-init`
 
 Status: approved, not implemented.
 Date: 2026-07-27.
 
 ## Problem
 
-`/delivery-init` detects the repo's gates, prints one proposal, asks a single yes/no question, and writes the file.
+`/shipwright-init` detects the repo's gates, prints one proposal, asks a single yes/no question, and writes the file.
 Everything else is decided for the user by a default they never see.
 
 Two separate gaps sit behind that.
@@ -19,13 +19,13 @@ Today `SKILL.md` delegates that kind of thing to the repo's own `AGENTS.md` or `
 
 ## Decision
 
-Extend `/delivery-init` into an opt-in wizard, and add a `style` section to the config for agent-behaviour preferences.
+Extend `/shipwright-init` into an opt-in wizard, and add a `style` section to the config for agent-behaviour preferences.
 
 Rejected: writing a generated block into the repo's `CLAUDE.md`.
 It works without the plugin and for any agent, but it is unvalidated, unreadable by the CLI and the hook, and it makes `init` write into a file it does not own.
 
-Rejected: a readline wizard inside `bin/delivery.js`.
-`/delivery-init` is a markdown prompt executed by an agent, and the agent's Bash tool gives the process no interactive stdin, so a prompting CLI would hang rather than ask.
+Rejected: a readline wizard inside `bin/shipwright.js`.
+`/shipwright-init` is a markdown prompt executed by an agent, and the agent's Bash tool gives the process no interactive stdin, so a prompting CLI would hang rather than ask.
 The agent asks the questions; the CLI stays non-interactive.
 
 ## The `style` section
@@ -60,7 +60,7 @@ So these defaults are chosen on a different rule, and the difference has to be r
 ## CLI
 
 ```bash
-node bin/delivery.js init --write \
+node bin/shipwright.js init --write \
   --set stages.tests=true \
   --set style.comments=none \
   --set gates.e2e="pnpm run e2e" \
@@ -77,7 +77,7 @@ Overrides apply to the proposal before it is printed, so a run without `--write`
 Any error - an unrecognised key, a value outside its enum, a `--set` without `=` - prints every error found, exits 1, and leaves the file untouched.
 There is no partially applied config.
 
-The existing refusal to overwrite an existing `.claude/delivery.json` stays as it is.
+The existing refusal to overwrite an existing `.claude/shipwright.json` stays as it is.
 
 ### Coercion follows the schema, not the shape of the string
 
@@ -96,7 +96,7 @@ The rules live in one place or they will drift.
 
 ## Command flow
 
-`commands/delivery-init.md` step 3 becomes a fork rather than a single yes/no.
+`commands/shipwright-init.md` step 3 becomes a fork rather than a single yes/no.
 
 "Write as proposed" is the current behaviour with no extra turns.
 "Customise" runs three batches, each followed by an offer to stop and write what has been decided so far.

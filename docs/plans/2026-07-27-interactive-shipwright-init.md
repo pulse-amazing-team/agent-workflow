@@ -1,20 +1,20 @@
-# Interactive `/delivery-init` Implementation Plan
+# Interactive `/shipwright-init` Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Turn `/delivery-init` into an opt-in wizard and add a `style` section to `.claude/delivery.json` so agent-behaviour preferences (code comments, commit granularity, checkpoint depth) are configured rather than assumed.
+**Goal:** Turn `/shipwright-init` into an opt-in wizard and add a `style` section to `.claude/shipwright.json` so agent-behaviour preferences (code comments, commit granularity, checkpoint depth) are configured rather than assumed.
 
-**Architecture:** The CLI stays non-interactive: the agent asks the questions and passes the answers as repeatable `--set key=value` / `--unset key` flags to `init`, which remains the only writer of the config file. Two new pure functions in `lib/config.js` parse and apply those overrides, reusing the existing `validate()` so enum rules live in one place. `bin/delivery.js` keeps all filesystem access.
+**Architecture:** The CLI stays non-interactive: the agent asks the questions and passes the answers as repeatable `--set key=value` / `--unset key` flags to `init`, which remains the only writer of the config file. Two new pure functions in `lib/config.js` parse and apply those overrides, reusing the existing `validate()` so enum rules live in one place. `bin/shipwright.js` keeps all filesystem access.
 
 **Tech Stack:** Node >= 22, ESM, zero dependencies, `node --test` (auto-discovers `test/*.test.js`), `node:assert/strict`.
 
-**Spec:** [docs/specs/2026-07-27-interactive-delivery-init.md](../specs/2026-07-27-interactive-delivery-init.md)
+**Spec:** [docs/specs/2026-07-27-interactive-shipwright-init.md](../specs/2026-07-27-interactive-shipwright-init.md)
 
 ## Global Constraints
 
 - No dependencies. Nothing may be added to `package.json`.
 - ESM only, Node >= 22 built-ins only.
-- `lib/` stays pure: no `node:fs`, no `node:child_process`. All filesystem access lives in `bin/delivery.js`.
+- `lib/` stays pure: no `node:fs`, no `node:child_process`. All filesystem access lives in `bin/shipwright.js`.
 - Never invent a gate command. An absent `gates` key means the gate does not exist.
 - Conventional Commits for every commit: `type(scope): summary`.
 - No em dash anywhere in code, comments, docs or commit messages. Use a plain dash.
@@ -90,7 +90,7 @@ In `lib/config.js`, add the enum table next to the other exported constants:
 // Style is agent behaviour, not process strictness, so these are not "strict
 // defaults" like the rest of the file: they reproduce what SKILL.md already
 // does, so a repo that upgrades the plugin without touching its config keeps
-// behaving exactly as it did. See docs/specs/2026-07-27-interactive-delivery-init.md.
+// behaving exactly as it did. See docs/specs/2026-07-27-interactive-shipwright-init.md.
 export const STYLE_VALUES = Object.freeze({
   comments: ['none', 'why-only', 'generous'],
   commits: ['atomic', 'per-stage', 'single'],
@@ -485,7 +485,7 @@ git commit -m "feat(config): parse and apply --set and --unset overrides"
 ### Task 4: Wire overrides into `init`
 
 **Files:**
-- Modify: `bin/delivery.js:49-78` (the `init` function) and its import block
+- Modify: `bin/shipwright.js:49-78` (the `init` function) and its import block
 - Test: `test/cli.test.js`
 
 **Interfaces:**
@@ -532,7 +532,7 @@ test('init --write stores the overrides', () => {
     root,
   );
   assert.equal(code, 0);
-  const written = JSON.parse(readFileSync(join(root, '.claude/delivery.json'), 'utf8'));
+  const written = JSON.parse(readFileSync(join(root, '.claude/shipwright.json'), 'utf8'));
   assert.equal(written.style.checkpoints, 'every');
   assert.equal(written.git.worktree, false);
 });
@@ -542,7 +542,7 @@ test('a bad override exits 1 and writes nothing at all', () => {
   const { code, stdout } = run(['init', '--write', '--set', 'style.comments=chatty'], root);
   assert.equal(code, 1);
   assert.match(stdout, /style\.comments must be one of/);
-  assert.throws(() => readFileSync(join(root, '.claude/delivery.json'), 'utf8'));
+  assert.throws(() => readFileSync(join(root, '.claude/shipwright.json'), 'utf8'));
 });
 ```
 
@@ -553,7 +553,7 @@ Expected: FAIL. `--set` is currently ignored, so the printed proposal is unchang
 
 - [ ] **Step 3: Implement**
 
-In `bin/delivery.js`, extend the import:
+In `bin/shipwright.js`, extend the import:
 
 ```js
 import { CONFIG_PATH, applyOverrides, loadConfig, parseOverrides } from '../lib/config.js';
@@ -596,16 +596,16 @@ Expected: PASS, whole suite green.
 
 - [ ] **Step 5: Verify it by hand against this very repo**
 
-Run: `node bin/delivery.js init --set style.checkpoints=every --set gates.e2e="npm run e2e"`
+Run: `node bin/shipwright.js init --set style.checkpoints=every --set gates.e2e="npm run e2e"`
 Expected: a printed config whose `style.checkpoints` is `every` and whose `gates.e2e` is `npm run e2e`, and no file written.
 
-Run: `node bin/delivery.js init --set style.comments=chatty`
+Run: `node bin/shipwright.js init --set style.comments=chatty`
 Expected: `config error: style.comments must be one of none, why-only, generous (got "chatty")` and exit code 1. Confirm with `echo $?`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add bin/delivery.js test/cli.test.js
+git add bin/shipwright.js test/cli.test.js
 git commit -m "feat(init): accept --set and --unset overrides"
 ```
 
@@ -614,7 +614,7 @@ git commit -m "feat(init): accept --set and --unset overrides"
 ### Task 5: Teach the skill to read `style`
 
 **Files:**
-- Modify: `skills/delivery-workflow/SKILL.md`
+- Modify: `skills/shipwright/SKILL.md`
 
 **Interfaces:**
 - Consumes: the value sets from Task 1. The wording here is the only place that gives them operational meaning, so the words matter as much as the code.
@@ -669,22 +669,22 @@ Then, unless `style.checkpoints` is `intake`, post a **planning checkpoint** to 
 
 - [ ] **Step 4: Verify the intake stop is still unconditional**
 
-Run: `grep -n "STOP" skills/delivery-workflow/SKILL.md`
+Run: `grep -n "STOP" skills/shipwright/SKILL.md`
 Expected: the stage 0 line still reads `Then **STOP** and groom` with no condition attached to it. Commit `2232700` restored that stop on purpose, and no `checkpoints` value may weaken it.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add skills/delivery-workflow/SKILL.md
+git add skills/shipwright/SKILL.md
 git commit -m "docs(skill): give the style settings operational meaning"
 ```
 
 ---
 
-### Task 6: The wizard in `/delivery-init`
+### Task 6: The wizard in `/shipwright-init`
 
 **Files:**
-- Modify: `commands/delivery-init.md` (steps 3 and 4)
+- Modify: `commands/shipwright-init.md` (steps 3 and 4)
 
 **Interfaces:**
 - Consumes: the CLI flags from Task 4. Every key named here must exist in `OVERRIDE_KINDS`.
@@ -744,7 +744,7 @@ Replace the body of `## Step 4: Write it` with:
 One command carrying every answer:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/bin/delivery.js" init --write --set <key>=<value> --unset <key>
+node "${CLAUDE_PLUGIN_ROOT}/bin/shipwright.js" init --write --set <key>=<value> --unset <key>
 ```
 
 Drop the flags the user did not change. With no answers at all this is the plain `init --write`.
@@ -754,13 +754,13 @@ If it exits non-zero it wrote nothing and printed every problem it found. Fix th
 
 - [ ] **Step 3: Verify every key named in the command file is a real key**
 
-Run: `grep -o 'gates\.[a-z]*\|stages\.[a-z]*\|git\.[a-z]*\|style\.[a-z]*' commands/delivery-init.md | sort -u`
+Run: `grep -o 'gates\.[a-z]*\|stages\.[a-z]*\|git\.[a-z]*\|style\.[a-z]*' commands/shipwright-init.md | sort -u`
 Expected: only `gates.<name>`, `stages.tests`, `git.squash`, `git.worktree`, `style.checkpoints`, `style.comments`, `style.commits`. Anything else is a key that does not exist and would exit 1 at runtime.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add commands/delivery-init.md
+git add commands/shipwright-init.md
 git commit -m "feat(init): make the command an opt-in three-batch wizard"
 ```
 
@@ -820,7 +820,7 @@ Insert after `## The tests decision`:
 
 `checkpoints` deserves one clarification. The stop after intake is mandatory at every level and this key cannot switch it off. `intake` means nothing beyond it, `plan` adds waiting for approval of the plan, and `every` adds a stop after each stage.
 
-The section requires plugin version 0.2.0 or later. An older plugin treats `style` as an unrecognised key, which is an error by design, and `/delivery-check` will refuse to run until you update.
+The section requires plugin version 0.2.0 or later. An older plugin treats `style` as an unrecognised key, which is an error by design, and `/shipwright-check` will refuse to run until you update.
 ```
 
 - [ ] **Step 6: Record the decision in the design doc**
@@ -830,13 +830,13 @@ Append to `docs/design.md`:
 ```markdown
 ## The style section
 
-`style` holds agent behaviour: `comments`, `commits`, `checkpoints`. It arrived with the interactive `/delivery-init`, because the alternative - a generated block in the repo's own `CLAUDE.md` - is unvalidated, invisible to the CLI and the hook, and makes `init` write into a file it does not own.
+`style` holds agent behaviour: `comments`, `commits`, `checkpoints`. It arrived with the interactive `/shipwright-init`, because the alternative - a generated block in the repo's own `CLAUDE.md` - is unvalidated, invisible to the CLI and the hook, and makes `init` write into a file it does not own.
 
 Its defaults break the strict-default rule that governs the rest of the config, and that is deliberate. Strictness is meaningless for style: `generous` is not stricter than `none`. So the defaults reproduce what `SKILL.md` already did, which also means upgrading the plugin cannot change a repo's process without a config change. Recorded here so the next reader of `lib/config.js` does not file it as an oversight and "fix" it.
 
-The CLI stays non-interactive. `/delivery-init` is a markdown prompt executed by an agent, and that agent's Bash tool gives the process no interactive stdin, so a readline wizard would hang rather than ask. The agent asks; the CLI takes the answers as `--set` and `--unset` flags and remains the only writer of the file.
+The CLI stays non-interactive. `/shipwright-init` is a markdown prompt executed by an agent, and that agent's Bash tool gives the process no interactive stdin, so a readline wizard would hang rather than ask. The agent asks; the CLI takes the answers as `--set` and `--unset` flags and remains the only writer of the file.
 
-The full spec is in [specs/2026-07-27-interactive-delivery-init.md](specs/2026-07-27-interactive-delivery-init.md).
+The full spec is in [specs/2026-07-27-interactive-shipwright-init.md](specs/2026-07-27-interactive-shipwright-init.md).
 ```
 
 - [ ] **Step 7: Run the whole suite one last time**

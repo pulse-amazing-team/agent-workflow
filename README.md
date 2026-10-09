@@ -10,7 +10,7 @@ Hand an agent a ticket and, left alone, it will usually start typing code. What 
 
 The usual fix is a long list of rules in a `CLAUDE.md` or `AGENTS.md`. That works until you have a second repository. Then the rules are copied, the copies drift, and nothing can be switched off for the project that genuinely does not need it.
 
-This plugin separates the two halves. The process is the same everywhere and lives here. The facts that differ - what your gates actually are, which branch you target, what language you write - live in `.claude/delivery.json` in your repo, in git, visible on review.
+This plugin separates the two halves. The process is the same everywhere and lives here. The facts that differ - what your gates actually are, which branch you target, what language you write - live in `.claude/shipwright.json` in your repo, in git, visible on review.
 
 ## What you get
 
@@ -18,7 +18,7 @@ This plugin separates the two halves. The process is the same everywhere and liv
 
 **A planning checkpoint.** The agent presents what it is building, what it is deliberately not building, and where the risk is - and waits, before writing code, when anything is product-ambiguous.
 
-**Gates that actually ran.** `/delivery-check` executes the commands you configured, prints their real output, and exits non-zero when one fails. A gate is a command with an exit code, not a line in a summary. One caveat worth knowing: a repository that has configured no gates has nothing to fail, so `check` says so plainly and still exits zero. An unconfigured repo is not a verified one, and the message says as much - but do not wire a merge gate to the exit code alone until you have configured at least one.
+**Gates that actually ran.** `/shipwright-check` executes the commands you configured, prints their real output, and exits non-zero when one fails. A gate is a command with an exit code, not a line in a summary. One caveat worth knowing: a repository that has configured no gates has nothing to fail, so `check` says so plainly and still exits zero. An unconfigured repo is not a verified one, and the message says as much - but do not wire a merge gate to the exit code alone until you have configured at least one.
 
 **An explicit decision about tests.** Not every change is worth a test, and an agent that writes them unasked produces noise. After implementation it stops and asks - once per ticket - and records the answer.
 
@@ -26,20 +26,20 @@ This plugin separates the two halves. The process is the same everywhere and liv
 
 ```
 /plugin marketplace add pulse-amazing-team/agent-workflow
-/plugin install delivery-workflow
+/plugin install shipwright
 ```
 
 Then once per repository:
 
 ```
-/delivery-init
+/shipwright-init
 ```
 
 It reads your repo - package manager, scripts, language, default branch - and proposes a config. It never invents a command it could not find: gates it cannot detect are listed by name so you can add them yourself. Take the proposal as-is, or answer three short batches of questions - gates, then process, then style - and stop after any of them. Review it, then commit it.
 
 ## Configuration
 
-`.claude/delivery.json`, committed to your repo:
+`.claude/shipwright.json`, committed to your repo:
 
 ```json
 {
@@ -101,14 +101,14 @@ Set it to `true` to always write tests. Set it to `false` and the test stages st
 
 `checkpoints` deserves one clarification. The stop after intake is mandatory at every level and this key cannot switch it off. `intake` means nothing beyond it, `plan` adds waiting for approval of the plan, and `every` adds a stop after each stage.
 
-The section requires plugin version 0.2.0 or later. An older plugin treats `style` as an unrecognised key, which is an error by design, and `/delivery-check` will refuse to run until you update.
+The section requires plugin version 0.2.0 or later. An older plugin treats `style` as an unrecognised key, which is an error by design, and `/shipwright-check` will refuse to run until you update.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `/delivery-init` | Read the repo, propose a config, write it after you approve |
-| `/delivery-check <ticket>` | Verify the ticket's artifacts, then actually run the gates and print their output |
+| `/shipwright-init` | Read the repo, propose a config, write it after you approve |
+| `/shipwright-check <ticket>` | Verify the ticket's artifacts, then actually run the gates and print their output |
 
 A non-blocking reminder also fires before `gh pr create`, listing anything the repo's own config says is missing. It never blocks: a gate you cannot get past is a gate people disable.
 
@@ -127,7 +127,7 @@ Three layers, and the boundaries matter more than the contents:
 | Layer | Lives in | Holds |
 |---|---|---|
 | Process | this plugin | The stages, the templates, the self-check. Identical everywhere |
-| Configuration | `.claude/delivery.json` | Gate commands, which stages are on, language, git conventions |
+| Configuration | `.claude/shipwright.json` | Gate commands, which stages are on, language, git conventions |
 | Project knowledge | your `AGENTS.md` | Stack, layout, domain conventions, gotchas |
 
 [docs/design.md](docs/design.md) records why it is shaped this way, including the alternatives that were rejected.
