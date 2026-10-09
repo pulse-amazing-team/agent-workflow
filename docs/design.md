@@ -1,4 +1,4 @@
-# Portable delivery workflow · Design
+# Shipwright · Design
 
 Date: 2026-07-27
 Status: approved, ready for planning
@@ -36,7 +36,7 @@ That separation is what makes it portable, and it is the constraint to hold onto
 Process only: the stage model, artifact templates, the self-check, intake rules, commit and PR conventions.
 No stack, no paths, no commands.
 
-**Layer 2 - `.claude/delivery.json` (machine-readable, committed per repo).**
+**Layer 2 - `.claude/shipwright.json` (machine-readable, committed per repo).**
 The facts the plugin must know exactly rather than guess: gate commands, which stages are on, language, git conventions.
 Committed, so it is identical for every person and every agent working in that repo, and visible on review when it changes.
 
@@ -48,16 +48,16 @@ The plugin reads this as context but does not own it.
 
 ```
 /plugin marketplace add pulse-amazing-team/agent-workflow
-/plugin install delivery-workflow
+/plugin install shipwright
 ```
 
 Then, once per project:
 
 ```
-/delivery-init
+/shipwright-init
 ```
 
-`/delivery-init` inspects the repo - package manager, scripts in `package.json`, language, default branch - proposes a `.claude/delivery.json`, and writes it after the user confirms.
+`/shipwright-init` inspects the repo - package manager, scripts in `package.json`, language, default branch - proposes a `.claude/shipwright.json`, and writes it after the user confirms.
 It never invents a command it could not find.
 A gate it cannot detect is left out, and it says which ones it left out and why.
 
@@ -65,7 +65,7 @@ Updating is `/plugin update`. Removing is `/plugin uninstall`.
 
 ## Config
 
-`.claude/delivery.json`:
+`.claude/shipwright.json`:
 
 ```json
 {
@@ -154,17 +154,17 @@ pulse-amazing-team/agent-workflow          the plugin IS the repo root
 ├── .claude-plugin/
 │   ├── marketplace.json                   source: "./"
 │   └── plugin.json                        manifest + hook registration
-├── skills/delivery-workflow/
+├── skills/shipwright/
 │   ├── SKILL.md                           orchestrator: reads config, drives stages
 │   └── templates/                         intake / scope / product / plan / test-cases
 ├── commands/
-│   ├── delivery-init.md                   inspect repo -> propose delivery.json
-│   └── delivery-check.md                  run self-check + gates, show real output
+│   ├── shipwright-init.md                   inspect repo -> propose shipwright.json
+│   └── shipwright-check.md                  run self-check + gates, show real output
 ├── hooks/pre-pr-reminder.js               soft pre-PR reminder
 ├── lib/                                   config, detection and status logic (unit-tested)
-├── bin/delivery.js                        CLI the commands and hook call
+├── bin/shipwright.js                        CLI the commands and hook call
 ├── test/                                  node --test
-├── schema.json                            JSON Schema for delivery.json
+├── schema.json                            JSON Schema for shipwright.json
 └── README.md                              install in three commands
 ```
 
@@ -179,7 +179,7 @@ It does not block.
 A blocking gate was considered and rejected - it breaks legitimate hotfixes, and a tool that gets in the way is a tool people disable.
 The hook cannot know whether the gates were actually run in this session, so a complete ticket with configured gates produces silence.
 
-`/delivery-check` runs the same evaluation on demand and prints real command output rather than a claim.
+`/shipwright-check` runs the same evaluation on demand and prints real command output rather than a claim.
 
 ## Adopting an existing repository
 
@@ -197,7 +197,7 @@ Stays in the repo's own instructions:
 - domain conventions, gotchas, "where things live"
 - any tracker automation: boards, columns, labels, and the like
 
-Added: `.claude/delivery.json`, configured with that project's own gates and stage settings.
+Added: `.claude/shipwright.json`, configured with that project's own gates and stage settings.
 
 ## Out of scope for v1
 
@@ -209,18 +209,18 @@ Added: `.claude/delivery.json`, configured with that project's own gates and sta
 
 ## Risks
 
-- **Config drift from reality.** A repo's `gates.test` can name a script that was later renamed. `/delivery-check` surfaces this the first time it runs, because the command fails loudly rather than being skipped.
+- **Config drift from reality.** A repo's `gates.test` can name a script that was later renamed. `/shipwright-check` surfaces this the first time it runs, because the command fails loudly rather than being skipped.
 - **The plugin absorbing project facts.** The one rule that makes this portable is that layer 1 knows nothing specific. Every future addition to `SKILL.md` should be checked against it.
 - **`"ask"` becoming a rubber stamp.** If the question is asked at a point where the human is not paying attention, the answer will always be "yes, whatever". It is asked right after implementation, when the diff is fresh and the human has context to answer well.
 
 ## The style section
 
-`style` holds agent behaviour: `comments`, `commits`, `checkpoints`. It arrived with the interactive `/delivery-init`, because the alternative - a generated block in the repo's own `CLAUDE.md` - is unvalidated, invisible to the CLI and the hook, and makes `init` write into a file it does not own.
+`style` holds agent behaviour: `comments`, `commits`, `checkpoints`. It arrived with the interactive `/shipwright-init`, because the alternative - a generated block in the repo's own `CLAUDE.md` - is unvalidated, invisible to the CLI and the hook, and makes `init` write into a file it does not own.
 
 Its defaults break the strict-default rule that governs the rest of the config, and that is deliberate. Strictness is meaningless for style: `generous` is not stricter than `none`. So the defaults reproduce what `SKILL.md` already did, which also means upgrading the plugin cannot change a repo's process without a config change. Recorded here so the next reader of `lib/config.js` does not file it as an oversight and "fix" it.
 
-The CLI stays non-interactive. `/delivery-init` is a markdown prompt executed by an agent, and that agent's shell gives the process no interactive stdin, so a readline wizard would hang rather than ask. The agent asks; the CLI takes the answers as `--set` and `--unset` flags and remains the only writer of the file.
+The CLI stays non-interactive. `/shipwright-init` is a markdown prompt executed by an agent, and that agent's shell gives the process no interactive stdin, so a readline wizard would hang rather than ask. The agent asks; the CLI takes the answers as `--set` and `--unset` flags and remains the only writer of the file.
 
 Adding the section is a breaking change for old plugin versions, hence 0.2.0. An older `lib/config.js` reports `unknown key style`, that lands in `errors`, and `check` stops running at all - broken, not degraded. Relaxing the unknown-key rule to tolerate future sections was rejected: catching a typo that would silently loosen the process is worth more than forward compatibility with a plugin the user can update.
 
-The full spec is in [specs/2026-07-27-interactive-delivery-init.md](specs/2026-07-27-interactive-delivery-init.md).
+The full spec is in [specs/2026-07-27-interactive-shipwright-init.md](specs/2026-07-27-interactive-shipwright-init.md).

@@ -8,7 +8,7 @@
   },
   "plugins": [
     {
-      "name": "delivery-workflow",
+      "name": "shipwright",
       "description": "Ship every ticket through the same staged process, with per-repo configuration.",
       "source": "./",
       "category": "workflow"

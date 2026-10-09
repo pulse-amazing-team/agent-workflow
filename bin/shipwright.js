@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// The CLI behind /delivery-init and /delivery-check, and the brain of the
+// The CLI behind /shipwright-init and /shipwright-check, and the brain of the
 // pre-PR hook.
 //
 // It exists so that "the gates pass" is a command that really ran and printed
@@ -95,7 +95,7 @@ function resolveConfig() {
     for (const error of errors) console.log(`config error: ${error}`);
     return null;
   }
-  if (!exists) console.log(`no ${CONFIG_PATH} - using strict defaults. Run /delivery-init.`);
+  if (!exists) console.log(`no ${CONFIG_PATH} - using strict defaults. Run /shipwright-init.`);
   return config;
 }
 
@@ -127,7 +127,7 @@ function status() {
   if (config === null) return 1;
   const ticket = rest[0];
   if (!ticket) {
-    console.log('usage: delivery status <ticket>');
+    console.log('usage: shipwright status <ticket>');
     return 1;
   }
   return artifactReport(config, ticket) ? 0 : 1;
@@ -138,7 +138,7 @@ function check() {
   if (config === null) return 1;
   const ticket = rest[0];
   if (!ticket) {
-    console.log('usage: delivery check <ticket>');
+    console.log('usage: shipwright check <ticket>');
     return 1;
   }
   let ok = artifactReport(config, ticket);
@@ -166,7 +166,7 @@ function check() {
 const commands = { init, status, check };
 let exitCode;
 if (!commands[command]) {
-  console.log('usage: delivery <init|status|check> [args]');
+  console.log('usage: shipwright <init|status|check> [args]');
   exitCode = 1;
 } else {
   exitCode = commands[command]();

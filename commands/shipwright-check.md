@@ -10,7 +10,7 @@ The ticket key is `$ARGUMENTS`. If it is empty, look at the current branch name 
 ## Run it
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/bin/delivery.js" check <ticket>
+node "${CLAUDE_PLUGIN_ROOT}/bin/shipwright.js" check <ticket>
 ```
 
 ## Report honestly

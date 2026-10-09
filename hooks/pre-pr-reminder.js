@@ -20,7 +20,7 @@ import {
 
 const PR_COMMAND = /\bgh\s+pr\s+create\b/;
 
-// Everything from .claude/delivery.json is untrusted: that file arrives with
+// Everything from .claude/shipwright.json is untrusted: that file arrives with
 // whatever branch is checked out, and this hook runs unprompted. Anything from
 // it that reaches the model's context goes through here first - whitespace
 // collapsed so it cannot fake structure, length capped so it cannot flood, and
@@ -74,15 +74,15 @@ function main() {
   // No config means this repo has not opted in. Say nothing.
   if (!exists) return;
   if (errors.length > 0) {
-    emit(`.claude/delivery.json is invalid. The loader reported: ${untrusted(errors.join('; '), 300)}. Fix it before opening the PR.`);
+    emit(`.claude/shipwright.json is invalid. The loader reported: ${untrusted(errors.join('; '), 300)}. Fix it before opening the PR.`);
     return;
   }
 
   const changed = changedPaths(cwd, config.git.base);
   if (changed === null) {
     emit(
-      `Delivery workflow: could not compare this branch against ${untrusted(config.git.base)} - ` +
-        `that base branch may be misnamed in .claude/delivery.json, or not fetched locally. ` +
+      `Shipwright: could not compare this branch against ${untrusted(config.git.base)} - ` +
+        `that base branch may be misnamed in .claude/shipwright.json, or not fetched locally. ` +
         `Artifact checking is skipped until it resolves. This is a reminder, not a block.`,
     );
     return;
@@ -91,7 +91,7 @@ function main() {
   if (ticket === null) {
     const gateNames = Object.keys(config.gates).join(', ');
     emit(
-      `Delivery workflow: could not tell which ticket this branch belongs to - no single directory under ${untrusted(config.docsDir)} was touched. ` +
+      `Shipwright: could not tell which ticket this branch belongs to - no single directory under ${untrusted(config.docsDir)} was touched. ` +
         `Before opening the PR, confirm the ticket's artifacts exist and that the configured gates (${gateNames ? untrusted(gateNames) : 'none configured'}) actually ran.`,
     );
     return;
@@ -122,8 +122,8 @@ function main() {
   if (notes.length === 0) return;
 
   emit(
-    `Delivery workflow reminder for ${untrusted(ticket)}: ${notes.join('; ')}. ` +
-      `Run /delivery-check ${untrusted(ticket)} for the full picture. This is a reminder, not a block.`,
+    `Shipwright reminder for ${untrusted(ticket)}: ${notes.join('; ')}. ` +
+      `Run /shipwright-check ${untrusted(ticket)} for the full picture. This is a reminder, not a block.`,
   );
 }
 

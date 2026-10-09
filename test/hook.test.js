@@ -28,14 +28,14 @@ function git(cwd, args) {
 // every test would exercise the "could not tell which ticket" fallback
 // instead of the artifact checks it means to test.
 function repo({ config = {}, artifacts = [] } = {}) {
-  const root = mkdtempSync(join(tmpdir(), 'delivery-hook-'));
+  const root = mkdtempSync(join(tmpdir(), 'shipwright-hook-'));
   git(root, ['init', '-q']);
   git(root, ['symbolic-ref', 'HEAD', 'refs/heads/main']);
   git(root, ['config', 'user.email', 'test@example.com']);
   git(root, ['config', 'user.name', 'Test']);
   git(root, ['config', 'commit.gpgsign', 'false']);
   mkdirSync(join(root, '.claude'), { recursive: true });
-  writeFileSync(join(root, '.claude/delivery.json'), JSON.stringify(config));
+  writeFileSync(join(root, '.claude/shipwright.json'), JSON.stringify(config));
   git(root, ['add', '.']);
   git(root, ['commit', '-q', '-m', 'base']);
 
@@ -94,7 +94,7 @@ test('a complete ticket produces no reminder at all', () => {
   assert.equal(output, null);
 });
 
-// Carried over from Task 4's review: `delivery check` exits 0 when a repo has
+// Carried over from Task 4's review: `shipwright check` exits 0 when a repo has
 // configured no gates, because there is nothing to fail - the printed message
 // is honest but the exit code is not. This hook must not read that silence as
 // "verified", so a gate-less repo gets a reminder even with every artifact in
@@ -121,7 +121,7 @@ test('an ambiguous ticket falls back to a generic reminder rather than guessing'
 });
 
 test('a repo with no config produces no reminder', () => {
-  const root = mkdtempSync(join(tmpdir(), 'delivery-hook-'));
+  const root = mkdtempSync(join(tmpdir(), 'shipwright-hook-'));
   const output = runHook(prCall, root);
   assert.equal(output, null);
 });
@@ -138,13 +138,13 @@ test('malformed stdin does not crash the hook', () => {
 
 // Fix round: changedPaths used to build a shell command by string
 // interpolation, and config.git.base is attacker-controlled - it arrives with
-// whatever .claude/delivery.json a branch or PR brings. A base like
+// whatever .claude/shipwright.json a branch or PR brings. A base like
 // `main; touch <marker> #` must never actually run `touch`.
 test('a hostile git.base cannot execute a shell command', () => {
   const root = repo();
   const marker = join(root, 'PWNED');
   writeFileSync(
-    join(root, '.claude/delivery.json'),
+    join(root, '.claude/shipwright.json'),
     JSON.stringify({ git: { base: `main; touch ${marker} #` } }),
   );
   runHook(prCall, root);

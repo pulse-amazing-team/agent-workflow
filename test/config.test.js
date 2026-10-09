@@ -7,9 +7,9 @@ import { test } from 'node:test';
 import { applyDefaults, loadConfig, validate, unknownKeys } from '../lib/config.js';
 
 function repoWith(contents) {
-  const root = mkdtempSync(join(tmpdir(), 'delivery-'));
+  const root = mkdtempSync(join(tmpdir(), 'shipwright-'));
   mkdirSync(join(root, '.claude'), { recursive: true });
-  writeFileSync(join(root, '.claude/delivery.json'), contents);
+  writeFileSync(join(root, '.claude/shipwright.json'), contents);
   return root;
 }
 
@@ -107,7 +107,7 @@ test('a git.base carrying shell metacharacters is an error', () => {
 });
 
 test('a missing config file yields defaults and is reported as absent', () => {
-  const root = mkdtempSync(join(tmpdir(), 'delivery-'));
+  const root = mkdtempSync(join(tmpdir(), 'shipwright-'));
   const result = loadConfig(root);
   assert.equal(result.exists, false);
   assert.deepEqual(result.errors, []);

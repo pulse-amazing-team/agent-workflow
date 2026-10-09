@@ -1,7 +1,7 @@
 {
-  "name": "delivery-workflow",
+  "name": "shipwright",
   "version": "0.2.0",
-  "description": "Ship every ticket through the same staged process: intake, scope, product, plan, implementation, an explicit tests decision, then gates and a pre-PR self-check. Configured per repository through .claude/delivery.json.",
+  "description": "Ship every ticket through the same staged process: intake, scope, product, plan, implementation, an explicit tests decision, then gates and a pre-PR self-check. Configured per repository through .claude/shipwright.json.",
   "author": { "name": "pulse-amazing-team", "url": "https://github.com/pulse-amazing-team" },
   "homepage": "https://github.com/pulse-amazing-team/agent-workflow",
   "repository": "https://github.com/pulse-amazing-team/agent-workflow",

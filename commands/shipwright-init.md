@@ -1,14 +1,14 @@
 ---
-description: Inspect this repo and propose a .claude/delivery.json
+description: Inspect this repo and propose a .claude/shipwright.json
 allowed-tools: Bash, Read, Write, Edit
 ---
 
-Set up the delivery workflow for this repository.
+Set up Shipwright for this repository.
 
 ## Step 1: Look at what is already there
 
 ```bash
-cat .claude/delivery.json 2>/dev/null || echo "no config yet"
+cat .claude/shipwright.json 2>/dev/null || echo "no config yet"
 ```
 
 If a config already exists, show it, say the repo is already set up, and stop unless the user asks to change something specific.
@@ -16,7 +16,7 @@ If a config already exists, show it, say the repo is already set up, and stop un
 ## Step 2: Propose a config
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/bin/delivery.js" init
+node "${CLAUDE_PLUGIN_ROOT}/bin/shipwright.js" init
 ```
 
 ## Step 3: Show it and get a decision
@@ -65,7 +65,7 @@ Never invent a command. A gate the user cannot name a command for does not exist
 One command carrying every answer:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/bin/delivery.js" init --write --set <key>=<value> --unset <key>
+node "${CLAUDE_PLUGIN_ROOT}/bin/shipwright.js" init --write --set <key>=<value> --unset <key>
 ```
 
 Drop the flags the user did not change. With no answers at all this is the plain `init --write`.
@@ -74,4 +74,4 @@ If it exits non-zero it wrote nothing and printed every problem it found. Fix th
 
 ## Step 5: Point at the next step
 
-Tell the user the config is committed-ready and that from here on, starting a ticket means invoking the `delivery-workflow` skill. Do not commit for them unless they ask.
+Tell the user the config is committed-ready and that from here on, starting a ticket means invoking the `shipwright` skill. Do not commit for them unless they ask.

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-const CLI = join(dirname(fileURLToPath(import.meta.url)), '../bin/delivery.js');
+const CLI = join(dirname(fileURLToPath(import.meta.url)), '../bin/shipwright.js');
 
 function run(args, cwd) {
   try {
@@ -18,11 +18,11 @@ function run(args, cwd) {
 }
 
 function scratchRepo({ pkg, config, artifacts = [] } = {}) {
-  const root = mkdtempSync(join(tmpdir(), 'delivery-cli-'));
+  const root = mkdtempSync(join(tmpdir(), 'shipwright-cli-'));
   if (pkg) writeFileSync(join(root, 'package.json'), JSON.stringify(pkg));
   if (config) {
     mkdirSync(join(root, '.claude'), { recursive: true });
-    writeFileSync(join(root, '.claude/delivery.json'), JSON.stringify(config));
+    writeFileSync(join(root, '.claude/shipwright.json'), JSON.stringify(config));
   }
   for (const artifact of artifacts) {
     const full = join(root, artifact);
@@ -53,7 +53,7 @@ test('init --write creates the config file', () => {
   const root = scratchRepo({ pkg: { scripts: { test: 'vitest run' } } });
   const { code } = run(['init', '--write'], root);
   assert.equal(code, 0);
-  const written = JSON.parse(readFileSync(join(root, '.claude/delivery.json'), 'utf8'));
+  const written = JSON.parse(readFileSync(join(root, '.claude/shipwright.json'), 'utf8'));
   assert.equal(written.$schema, 'https://raw.githubusercontent.com/pulse-amazing-team/agent-workflow/main/schema.json');
   assert.deepEqual(written.gates, { test: 'npm run test' });
 });
@@ -200,7 +200,7 @@ test('init --write stores the overrides', () => {
     root,
   );
   assert.equal(code, 0);
-  const written = JSON.parse(readFileSync(join(root, '.claude/delivery.json'), 'utf8'));
+  const written = JSON.parse(readFileSync(join(root, '.claude/shipwright.json'), 'utf8'));
   assert.equal(written.style.checkpoints, 'every');
   assert.equal(written.git.worktree, false);
 });
@@ -210,5 +210,5 @@ test('a bad override exits 1 and writes nothing at all', () => {
   const { code, stdout } = run(['init', '--write', '--set', 'style.comments=chatty'], root);
   assert.equal(code, 1);
   assert.match(stdout, /style\.comments must be one of/);
-  assert.throws(() => readFileSync(join(root, '.claude/delivery.json'), 'utf8'));
+  assert.throws(() => readFileSync(join(root, '.claude/shipwright.json'), 'utf8'));
 });
