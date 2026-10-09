@@ -128,6 +128,27 @@ Then confirm by hand:
 - No forbidden constructs for the configured `language`.
 - No generated file hand-edited.
 
+## Code review
+
+Once coding is finished and the check is green, **ASK** the human: "Coding is finished. Do you want to start the code review?"
+**WAIT** for the answer. Never start the review on your own.
+
+On yes, run the review in a separate session that knows nothing about the ticket or this conversation:
+
+```bash
+claude -p "/code-review high <branch>" --permission-mode plan
+```
+
+Pass only the branch.
+Do not add the ticket, the plan or your own summary: a reviewer that shares your framing shares your blind spots.
+`--permission-mode plan` keeps the reviewer read-only.
+
+Show the human the findings verbatim.
+For each one, either fix it or say why it does not apply; never drop a finding silently.
+After fixes, re-run the check.
+
+On no, record that the review was skipped by the human and continue.
+
 ## Proof
 
 Green gates are not proof.
@@ -150,6 +171,7 @@ After proof, write `brief.md` from the template and post a short version of it i
 - **Fix** - how it was done: the approach, not a diff walkthrough.
 - **Manual check** - numbered steps a human can follow, with the expected result at each step.
 - **Test coverage** - which tests cover the new logic, or the recorded "no tests" decision.
+- **Code review** - each finding and what was done about it, or "skipped by the human".
 - **Proof** - the screenshot or captured output from `proof/`.
 
 ## Merge request
